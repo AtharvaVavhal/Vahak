@@ -32,3 +32,9 @@ android/build/
 # Temporary
 tmp/
 temp/
+
+# Generated Prisma Client
+/services/api/src/generated/prisma
+
+# TypeScript build info
+*.tsbuildinfo
