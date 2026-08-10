@@ -1,0 +1,34 @@
+# Dependencies
+node_modules/
+
+# Environment
+.env
+.env.*
+!.env.example
+
+# Build output
+dist/
+build/
+.next/
+coverage/
+
+# React Native
+ios/Pods/
+ios/build/
+android/.gradle/
+android/app/build/
+android/build/
+
+# IDE
+.vscode/
+.idea/
+
+# OS
+.DS_Store
+
+# Logs
+*.log
+
+# Temporary
+tmp/
+temp/
