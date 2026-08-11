@@ -38,3 +38,8 @@ temp/
 
 # TypeScript build info
 *.tsbuildinfo
+
+# Generated seed-test-data artifacts
+/services/api/seed-test-data.js
+/services/api/seed-test-data.js.map
+/services/api/seed-test-data.d.ts

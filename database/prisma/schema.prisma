@@ -8,6 +8,131 @@ datasource db {
   provider = "postgresql"
 }
 
+model User {
+  id                    String             @id @default(uuid())
+  name                  String
+  phone                 String             @unique
+  email                 String?            @unique
+  role                  UserRole
+  createdAt             DateTime           @default(now()) @db.Timestamptz
+  updatedAt             DateTime           @updatedAt @db.Timestamptz
+  passwordHash          String
+  conductedConsignments Consignment[]      @relation("ConductorConsignments")
+  receivedConsignments  Consignment[]      @relation("RecipientConsignments")
+  sentConsignments      Consignment[]      @relation("SenderConsignments")
+  events                ConsignmentEvent[]
+  incentives            IncentiveLedger[]
+}
+
+model Route {
+  id           String        @id @default(uuid())
+  name         String
+  origin       String
+  destination  String
+  createdAt    DateTime      @default(now()) @db.Timestamptz
+  updatedAt    DateTime      @updatedAt @db.Timestamptz
+  buses        Bus[]
+  consignments Consignment[]
+  halts        Halt[]
+}
+
+model Halt {
+  id                  String        @id @default(uuid())
+  routeId             String
+  name                String
+  sequence            Int
+  latitude            Decimal?      @db.Decimal(10, 7)
+  longitude           Decimal?      @db.Decimal(10, 7)
+  dropoffConsignments Consignment[] @relation("DropoffHalt")
+  pickupConsignments  Consignment[] @relation("PickupHalt")
+  route               Route         @relation(fields: [routeId], references: [id], onDelete: Cascade)
+
+  @@unique([routeId, sequence])
+}
+
+model Bus {
+  id           String        @id @default(uuid())
+  registration String        @unique
+  routeId      String
+  active       Boolean       @default(true)
+  createdAt    DateTime      @default(now()) @db.Timestamptz
+  route        Route         @relation(fields: [routeId], references: [id])
+  consignments Consignment[]
+}
+
+model Consignment {
+  id               String             @id @default(uuid())
+  trackingCode     String             @unique
+  senderId         String
+  recipientId      String
+  conductorId      String?
+  routeId          String
+  busId            String?
+  pickupHaltId     String
+  dropoffHaltId    String
+  parcelSize       ParcelSize
+  description      String?
+  fare             Decimal            @db.Decimal(10, 2)
+  status           ConsignmentStatus  @default(CREATED)
+  createdAt        DateTime           @default(now()) @db.Timestamptz
+  updatedAt        DateTime           @updatedAt @db.Timestamptz
+  bus              Bus?               @relation(fields: [busId], references: [id])
+  conductor        User?              @relation("ConductorConsignments", fields: [conductorId], references: [id])
+  dropoffHalt      Halt               @relation("DropoffHalt", fields: [dropoffHaltId], references: [id])
+  pickupHalt       Halt               @relation("PickupHalt", fields: [pickupHaltId], references: [id])
+  recipient        User               @relation("RecipientConsignments", fields: [recipientId], references: [id])
+  route            Route              @relation(fields: [routeId], references: [id])
+  sender           User               @relation("SenderConsignments", fields: [senderId], references: [id])
+  events           ConsignmentEvent[]
+  deliveryProof    DeliveryProof?
+  incentiveLedgers IncentiveLedger[]
+
+  @@index([senderId])
+  @@index([recipientId])
+  @@index([conductorId])
+  @@index([routeId])
+  @@index([status])
+}
+
+model ConsignmentEvent {
+  id            String      @id @default(uuid())
+  consignmentId String
+  actorId       String?
+  type          EventType
+  metadata      Json?
+  createdAt     DateTime    @default(now()) @db.Timestamptz
+  actor         User?       @relation(fields: [actorId], references: [id])
+  consignment   Consignment @relation(fields: [consignmentId], references: [id], onDelete: Cascade)
+
+  @@index([consignmentId, createdAt])
+}
+
+model DeliveryProof {
+  id            String      @id @default(uuid())
+  consignmentId String      @unique
+  type          ProofType
+  codeHash      String
+  nonce         String      @unique
+  expiresAt     DateTime    @db.Timestamptz
+  verifiedAt    DateTime?   @db.Timestamptz
+  createdAt     DateTime    @default(now()) @db.Timestamptz
+  attempts      Int         @default(0)
+  consignment   Consignment @relation(fields: [consignmentId], references: [id], onDelete: Cascade)
+}
+
+model IncentiveLedger {
+  id            String       @id @default(uuid())
+  userId        String
+  consignmentId String?
+  amount        Decimal      @db.Decimal(10, 2)
+  reason        String
+  createdAt     DateTime     @default(now()) @db.Timestamptz
+  consignment   Consignment? @relation(fields: [consignmentId], references: [id])
+  user          User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, createdAt])
+}
+
 enum UserRole {
   SENDER
   CONDUCTOR
@@ -44,140 +169,4 @@ enum EventType {
 enum ProofType {
   QR
   PIN
-}
-
-model User {
-  id        String   @id @default(uuid())
-  name      String
-  phone     String   @unique
-  email        String?  @unique
-  passwordHash String
-  role         UserRole
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  sentConsignments      Consignment[]      @relation("SenderConsignments")
-  receivedConsignments  Consignment[]      @relation("RecipientConsignments")
-  conductedConsignments Consignment[]      @relation("ConductorConsignments")
-  events                ConsignmentEvent[]
-  incentives            IncentiveLedger[]
-}
-
-model Route {
-  id          String   @id @default(uuid())
-  name        String
-  origin      String
-  destination String
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-
-  halts        Halt[]
-  buses        Bus[]
-  consignments Consignment[]
-}
-
-model Halt {
-  id        String   @id @default(uuid())
-  routeId   String
-  name      String
-  sequence  Int
-  latitude  Decimal? @db.Decimal(10, 7)
-  longitude Decimal? @db.Decimal(10, 7)
-
-  route Route @relation(fields: [routeId], references: [id], onDelete: Cascade)
-
-  pickupConsignments  Consignment[] @relation("PickupHalt")
-  dropoffConsignments Consignment[] @relation("DropoffHalt")
-
-  @@unique([routeId, sequence])
-}
-
-model Bus {
-  id           String   @id @default(uuid())
-  registration String   @unique
-  routeId      String
-  active       Boolean  @default(true)
-  createdAt    DateTime @default(now())
-
-  route Route @relation(fields: [routeId], references: [id], onDelete: Restrict)
-
-  consignments Consignment[]
-}
-
-model Consignment {
-  id            String            @id @default(uuid())
-  trackingCode  String            @unique
-  senderId      String
-  recipientId   String
-  conductorId   String?
-  routeId       String
-  busId         String?
-  pickupHaltId  String
-  dropoffHaltId String
-  parcelSize    ParcelSize
-  description   String?
-  fare          Decimal           @db.Decimal(10, 2)
-  status        ConsignmentStatus @default(CREATED)
-  createdAt     DateTime          @default(now())
-  updatedAt     DateTime          @updatedAt
-
-  sender    User  @relation("SenderConsignments", fields: [senderId], references: [id], onDelete: Restrict)
-  recipient User  @relation("RecipientConsignments", fields: [recipientId], references: [id], onDelete: Restrict)
-  conductor User? @relation("ConductorConsignments", fields: [conductorId], references: [id], onDelete: SetNull)
-
-  route       Route @relation(fields: [routeId], references: [id], onDelete: Restrict)
-  bus         Bus?  @relation(fields: [busId], references: [id], onDelete: SetNull)
-  pickupHalt  Halt  @relation("PickupHalt", fields: [pickupHaltId], references: [id], onDelete: Restrict)
-  dropoffHalt Halt  @relation("DropoffHalt", fields: [dropoffHaltId], references: [id], onDelete: Restrict)
-
-  events           ConsignmentEvent[]
-  deliveryProof    DeliveryProof?
-  incentiveLedgers IncentiveLedger[]
-
-  @@index([senderId])
-  @@index([recipientId])
-  @@index([conductorId])
-  @@index([routeId])
-  @@index([status])
-}
-
-model ConsignmentEvent {
-  id            String    @id @default(uuid())
-  consignmentId String
-  actorId       String?
-  type          EventType
-  metadata      Json?
-  createdAt     DateTime  @default(now())
-
-  consignment Consignment @relation(fields: [consignmentId], references: [id], onDelete: Cascade)
-  actor       User?       @relation(fields: [actorId], references: [id], onDelete: SetNull)
-
-  @@index([consignmentId, createdAt])
-}
-
-model DeliveryProof {
-  id            String    @id @default(uuid())
-  consignmentId String    @unique
-  type          ProofType
-  codeHash      String
-  nonce         String    @unique
-  expiresAt     DateTime
-  verifiedAt    DateTime?
-  createdAt     DateTime  @default(now())
-
-  consignment Consignment @relation(fields: [consignmentId], references: [id], onDelete: Cascade)
-}
-
-model IncentiveLedger {
-  id            String   @id @default(uuid())
-  userId        String
-  consignmentId String?
-  amount        Decimal  @db.Decimal(10, 2)
-  reason        String
-  createdAt     DateTime @default(now())
-
-  user        User         @relation(fields: [userId], references: [id], onDelete: Cascade)
-  consignment Consignment? @relation(fields: [consignmentId], references: [id], onDelete: SetNull)
-
-  @@index([userId, createdAt])
 }
