@@ -1,0 +1,14 @@
+[
+  { "consignmentTrackingCode": "VHK002", "type": "CREATED", "actorName": "Swapnil Sender", "createdAt": "2026-08-10T09:00:00.000Z" },
+  { "consignmentTrackingCode": "VHK002", "type": "BOOKED", "actorName": "Swapnil Sender", "createdAt": "2026-08-10T09:05:00.000Z" },
+  { "consignmentTrackingCode": "VHK002", "type": "ACCEPTED", "actorName": "Ramesh Conductor", "createdAt": "2026-08-10T09:30:00.000Z" },
+  { "consignmentTrackingCode": "VHK002", "type": "IN_TRANSIT", "actorName": "Ramesh Conductor", "createdAt": "2026-08-10T09:35:00.000Z" },
+  { "consignmentTrackingCode": "VHK002", "type": "HANDOVER_INITIATED", "actorName": "Priya Recipient", "createdAt": "2026-08-12T10:28:00.000Z" },
+  { "consignmentTrackingCode": "VHK002", "type": "HANDOVER_VERIFIED", "actorName": "Ramesh Conductor", "createdAt": "2026-08-12T10:30:00.000Z" },
+  { "consignmentTrackingCode": "VHK002", "type": "DELIVERED", "actorName": "Ramesh Conductor", "createdAt": "2026-08-12T10:30:30.000Z" },
+
+  { "consignmentTrackingCode": "VHK001", "type": "CREATED", "actorName": "Swapnil Sender", "createdAt": "2026-08-11T08:00:00.000Z" },
+  { "consignmentTrackingCode": "VHK001", "type": "BOOKED", "actorName": "Swapnil Sender", "createdAt": "2026-08-11T08:05:00.000Z" },
+  { "consignmentTrackingCode": "VHK001", "type": "ACCEPTED", "actorName": "Ramesh Conductor", "createdAt": "2026-08-11T08:20:00.000Z" },
+  { "consignmentTrackingCode": "VHK001", "type": "IN_TRANSIT", "actorName": "Ramesh Conductor", "createdAt": "2026-08-11T08:25:00.000Z" }
+]
