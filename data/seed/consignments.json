@@ -1,0 +1,30 @@
+[
+  {
+    "trackingCode": "VHK001",
+    "senderName": "Swapnil Sender",
+    "recipientName": "Priya Recipient",
+    "conductorName": "Ramesh Conductor",
+    "routeName": "Pune to Sangli",
+    "busRegistration": "MH-12-AB-1234",
+    "pickupHaltName": "Swargate, Pune",
+    "dropoffHaltName": "Sangli",
+    "parcelSize": "MEDIUM",
+    "description": "Documents envelope for demo",
+    "fare": 150.00,
+    "status": "IN_TRANSIT"
+  },
+  {
+    "trackingCode": "VHK002",
+    "senderName": "Swapnil Sender",
+    "recipientName": "Priya Recipient",
+    "conductorName": "Ramesh Conductor",
+    "routeName": "Swargate to Katraj",
+    "busRegistration": "MH-14-CD-5678",
+    "pickupHaltName": "Swargate, Pune",
+    "dropoffHaltName": "Katraj",
+    "parcelSize": "SMALL",
+    "description": "Small electronics box",
+    "fare": 80.00,
+    "status": "DELIVERED"
+  }
+]
