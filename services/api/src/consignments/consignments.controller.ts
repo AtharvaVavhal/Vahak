@@ -1,11 +1,5 @@
 import { Get, Param } from '@nestjs/common';
-import {
-  Body,
-  Controller,
-  Post,
-  Req,
-  UseGuards,
-} from '@nestjs/common';
+import { Body, Controller, Post, Req, UseGuards } from '@nestjs/common';
 import type { Request } from 'express';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { Roles } from '../auth/decorators/roles.decorator';
@@ -23,9 +17,7 @@ interface AuthenticatedRequest extends Request {
 
 @Controller('consignments')
 export class ConsignmentsController {
-  constructor(
-    private readonly consignmentsService: ConsignmentsService,
-  ) {}
+  constructor(private readonly consignmentsService: ConsignmentsService) {}
 
   @Get(':id')
   @UseGuards(JwtAuthGuard)
@@ -42,40 +34,22 @@ export class ConsignmentsController {
   @Post(':id/book')
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('SENDER')
-  book(
-    @Param('id') id: string,
-    @Req() request: AuthenticatedRequest,
-  ) {
-    return this.consignmentsService.book(
-      id,
-      request.user.id,
-    );
+  book(@Param('id') id: string, @Req() request: AuthenticatedRequest) {
+    return this.consignmentsService.book(id, request.user.id);
   }
 
   @Post(':id/accept')
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('CONDUCTOR')
-  accept(
-    @Param('id') id: string,
-    @Req() request: AuthenticatedRequest,
-  ) {
-    return this.consignmentsService.accept(
-      id,
-      request.user.id,
-    );
+  accept(@Param('id') id: string, @Req() request: AuthenticatedRequest) {
+    return this.consignmentsService.accept(id, request.user.id);
   }
 
   @Post(':id/handover')
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('CONDUCTOR')
-  initiateHandover(
-    @Param('id') id: string,
-    @Req() request: AuthenticatedRequest,
-  ) {
-    return this.consignmentsService.initiateHandover(
-      id,
-      request.user.id,
-    );
+  initiateHandover(@Param('id') id: string, @Req() request: AuthenticatedRequest) {
+    return this.consignmentsService.initiateHandover(id, request.user.id);
   }
 
   @Post(':id/handover/verify')
@@ -86,36 +60,20 @@ export class ConsignmentsController {
     @Req() request: AuthenticatedRequest,
     @Body() body: { pin: string },
   ) {
-    return this.consignmentsService.verifyHandover(
-      id,
-      request.user.id,
-      body.pin,
-    );
+    return this.consignmentsService.verifyHandover(id, request.user.id, body.pin);
   }
 
   @Post(':id/cancel')
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('SENDER')
-  cancel(
-    @Param('id') id: string,
-    @Req() request: AuthenticatedRequest,
-  ) {
-    return this.consignmentsService.cancel(
-      id,
-      request.user.id,
-    );
+  cancel(@Param('id') id: string, @Req() request: AuthenticatedRequest) {
+    return this.consignmentsService.cancel(id, request.user.id);
   }
 
   @Post()
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('SENDER')
-  create(
-    @Req() request: AuthenticatedRequest,
-    @Body() body: CreateConsignmentDto,
-  ) {
-    return this.consignmentsService.create(
-      request.user.id,
-      body,
-    );
+  create(@Req() request: AuthenticatedRequest, @Body() body: CreateConsignmentDto) {
+    return this.consignmentsService.create(request.user.id, body);
   }
 }

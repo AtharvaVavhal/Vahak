@@ -1,12 +1,5 @@
 import { Type } from 'class-transformer';
-import {
-  IsEnum,
-  IsNumber,
-  IsOptional,
-  IsString,
-  IsUUID,
-  Min,
-} from 'class-validator';
+import { IsEnum, IsNumber, IsOptional, IsString, IsUUID, Min } from 'class-validator';
 import { ParcelSize } from '../../generated/prisma/client';
 
 export class CreateConsignmentDto {

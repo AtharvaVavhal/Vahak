@@ -43,3 +43,8 @@ temp/
 /services/api/seed-test-data.js
 /services/api/seed-test-data.js.map
 /services/api/seed-test-data.d.ts
+
+# Generated seed-admin artifacts
+/services/api/seed-admin.js
+/services/api/seed-admin.js.map
+/services/api/seed-admin.d.ts

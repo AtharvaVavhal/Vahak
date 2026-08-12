@@ -23,6 +23,7 @@
     "@nestjs/common": "^11.0.1",
     "@nestjs/config": "^4.0.4",
     "@nestjs/core": "^11.0.1",
+    "@nestjs/mapped-types": "^2.1.1",
     "@nestjs/passport": "^11.0.5",
     "@nestjs/platform-express": "^11.0.1",
     "@prisma/adapter-pg": "^7.9.1",
@@ -73,6 +74,7 @@
     "transform": {
       "^.+\\.(t|j)s$": "ts-jest"
     },
+    "resolver": "<rootDir>/jest-resolver.cjs",
     "collectCoverageFrom": [
       "**/*.(t|j)s"
     ],

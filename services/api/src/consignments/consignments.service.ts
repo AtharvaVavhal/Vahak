@@ -45,6 +45,19 @@ export class ConsignmentsService {
       throw new NotFoundException('Dropoff halt not found');
     }
 
+    // Validate bus if provided
+    if (input.busId) {
+      const bus = await this.prisma.bus.findUnique({
+        where: { id: input.busId },
+      });
+      if (!bus) {
+        throw new NotFoundException('Bus not found');
+      }
+      if (!bus.active) {
+        throw new BadRequestException('Selected bus is inactive');
+      }
+    }
+
     const trackingCode = `VHK-${Date.now()}-${Math.random()
       .toString(36)
       .slice(2, 8)
@@ -93,9 +106,7 @@ export class ConsignmentsService {
     }
 
     if (consignment.status !== 'CREATED') {
-      throw new BadRequestException(
-        `Cannot book consignment from status ${consignment.status}`,
-      );
+      throw new BadRequestException(`Cannot book consignment from status ${consignment.status}`);
     }
 
     return this.prisma.$transaction(async (tx) => {
@@ -128,9 +139,7 @@ export class ConsignmentsService {
     }
 
     if (consignment.status !== 'BOOKED') {
-      throw new BadRequestException(
-        `Cannot accept consignment from status ${consignment.status}`,
-      );
+      throw new BadRequestException(`Cannot accept consignment from status ${consignment.status}`);
     }
 
     const conductor = await this.prisma.user.findUnique({
@@ -176,23 +185,17 @@ export class ConsignmentsService {
     }
 
     if (consignment.conductorId !== conductorId) {
-      throw new ForbiddenException(
-        'Only the assigned conductor can initiate handover',
-      );
+      throw new ForbiddenException('Only the assigned conductor can initiate handover');
     }
 
     if (consignment.status !== 'ACCEPTED') {
-      throw new BadRequestException(
-        `Cannot initiate handover from status ${consignment.status}`,
-      );
+      throw new BadRequestException(`Cannot initiate handover from status ${consignment.status}`);
     }
 
     const pin = randomInt(100000, 1000000).toString();
     const nonce = randomInt(100000000, 1000000000).toString();
 
-    const codeHash = createHash('sha256')
-      .update(`${pin}:${nonce}`)
-      .digest('hex');
+    const codeHash = createHash('sha256').update(`${pin}:${nonce}`).digest('hex');
 
     const expiresAt = new Date(Date.now() + 30 * 60 * 1000);
 
@@ -230,11 +233,7 @@ export class ConsignmentsService {
     });
   }
 
-  async verifyHandover(
-    id: string,
-    recipientId: string,
-    pin: string,
-  ) {
+  async verifyHandover(id: string, recipientId: string, pin: string) {
     const consignment = await this.prisma.consignment.findUnique({
       where: { id },
     });
@@ -244,21 +243,15 @@ export class ConsignmentsService {
     }
 
     if (consignment.recipientId !== recipientId) {
-      throw new ForbiddenException(
-        'Only the recipient can verify this handover',
-      );
+      throw new ForbiddenException('Only the recipient can verify this handover');
     }
 
     if (consignment.status !== 'IN_TRANSIT') {
-      throw new BadRequestException(
-        `Cannot verify handover from status ${consignment.status}`,
-      );
+      throw new BadRequestException(`Cannot verify handover from status ${consignment.status}`);
     }
 
     if (!/^\d{6}$/.test(pin)) {
-      throw new BadRequestException(
-        'Handover PIN must be 6 digits',
-      );
+      throw new BadRequestException('Handover PIN must be 6 digits');
     }
 
     const proof = await this.prisma.deliveryProof.findUnique({
@@ -272,33 +265,23 @@ export class ConsignmentsService {
     }
 
     if (proof.type !== 'PIN') {
-      throw new BadRequestException(
-        'Unsupported handover proof type',
-      );
+      throw new BadRequestException('Unsupported handover proof type');
     }
 
     if (proof.verifiedAt) {
-      throw new BadRequestException(
-        'Handover has already been verified',
-      );
+      throw new BadRequestException('Handover has already been verified');
     }
 
     if (proof.expiresAt <= new Date()) {
-      throw new BadRequestException(
-        'Handover PIN has expired',
-      );
+      throw new BadRequestException('Handover PIN has expired');
     }
 
     const MAX_ATTEMPTS = 5;
     if (proof.attempts >= MAX_ATTEMPTS) {
-      throw new BadRequestException(
-        'Maximum PIN verification attempts exceeded',
-      );
+      throw new BadRequestException('Maximum PIN verification attempts exceeded');
     }
 
-    const codeHash = createHash('sha256')
-      .update(`${pin}:${proof.nonce}`)
-      .digest('hex');
+    const codeHash = createHash('sha256').update(`${pin}:${proof.nonce}`).digest('hex');
 
     if (codeHash !== proof.codeHash) {
       // Increment failed attempt counter
@@ -306,9 +289,7 @@ export class ConsignmentsService {
         where: { id: proof.id },
         data: { attempts: { increment: 1 } },
       });
-      throw new BadRequestException(
-        'Invalid handover PIN',
-      );
+      throw new BadRequestException('Invalid handover PIN');
     }
 
     return this.prisma.$transaction(async (tx) => {
@@ -426,17 +407,13 @@ export class ConsignmentsService {
     }
 
     if (consignment.status === 'DELIVERED' || consignment.status === 'CANCELLED') {
-      throw new BadRequestException(
-        `Cannot cancel consignment from status ${consignment.status}`,
-      );
+      throw new BadRequestException(`Cannot cancel consignment from status ${consignment.status}`);
     }
 
     // Allow cancellation from CREATED, BOOKED, ACCEPTED, IN_TRANSIT
     const allowedStatuses = ['CREATED', 'BOOKED', 'ACCEPTED', 'IN_TRANSIT'];
     if (!allowedStatuses.includes(consignment.status)) {
-      throw new BadRequestException(
-        `Cannot cancel consignment from status ${consignment.status}`,
-      );
+      throw new BadRequestException(`Cannot cancel consignment from status ${consignment.status}`);
     }
 
     return this.prisma.$transaction(async (tx) => {
