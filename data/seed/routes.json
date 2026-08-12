@@ -1,0 +1,27 @@
+[
+  {
+    "operator": "MSRTC",
+    "name": "Pune to Sangli",
+    "origin": "Swargate, Pune",
+    "destination": "Sangli",
+    "halts": [
+{ "name": "Swargate, Pune", "sequence": 1 },
+      { "name": "Satara", "sequence": 2 },
+      { "name": "Karad", "sequence": 3 },
+      { "name": "Islampur", "sequence": 4 },
+      { "name": "Sangli", "sequence": 5 }
+    ]
+  },
+{
+    "operator": "PMPML",
+    "name": "Swargate to Katraj",
+    "origin": "Swargate, Pune",
+    "destination": "Katraj",
+    "halts": [
+      { "name": "Swargate, Pune", "sequence": 1 },
+      { "name": "Market Yard", "sequence": 2 },
+      { "name": "Bibwewadi", "sequence": 3 },
+      { "name": "Katraj", "sequence": 4 }
+    ]
+  }
+]
