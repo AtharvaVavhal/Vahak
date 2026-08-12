@@ -1,0 +1,30 @@
+[
+  {
+    "name": "Admin User",
+    "phone": "9000000001",
+    "email": "admin@vahak.demo",
+    "passwordHash": "$2b$10$QrFt3fphYtbq3LBbZ4EbL.lKkakDear4NLssDFbzz9Y6AoZD.kngW",
+    "role": "ADMIN"
+  },
+  {
+    "name": "Swapnil Sender",
+    "phone": "9000000002",
+    "email": "sender@vahak.demo",
+    "passwordHash": "$2b$10$QrFt3fphYtbq3LBbZ4EbL.lKkakDear4NLssDFbzz9Y6AoZD.kngW",
+    "role": "SENDER"
+  },
+  {
+    "name": "Ramesh Conductor",
+    "phone": "9000000003",
+    "email": "conductor@vahak.demo",
+    "passwordHash": "$2b$10$QrFt3fphYtbq3LBbZ4EbL.lKkakDear4NLssDFbzz9Y6AoZD.kngW",
+    "role": "CONDUCTOR"
+  },
+  {
+    "name": "Priya Recipient",
+    "phone": "9000000004",
+    "email": "recipient@vahak.demo",
+    "passwordHash": "$2b$10$QrFt3fphYtbq3LBbZ4EbL.lKkakDear4NLssDFbzz9Y6AoZD.kngW",
+    "role": "RECIPIENT"
+  }
+]
