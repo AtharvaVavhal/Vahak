@@ -1,0 +1,12 @@
+[
+  {
+    "registration": "MH-12-AB-1234",
+    "routeName": "Pune to Sangli",
+    "active": true
+  },
+  {
+    "registration": "MH-14-CD-5678",
+    "routeName": "Swargate to Katraj",
+    "active": true
+  }
+]
