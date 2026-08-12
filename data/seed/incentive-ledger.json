@@ -1,0 +1,16 @@
+[
+  {
+    "userName": "Ramesh Conductor",
+    "consignmentTrackingCode": "VHK002",
+    "amount": 20.00,
+    "reason": "Successful delivery completion bonus",
+    "createdAt": "2026-08-12T10:31:00.000Z"
+  },
+  {
+    "userName": "Ramesh Conductor",
+    "consignmentTrackingCode": null,
+    "amount": 50.00,
+    "reason": "Weekly on-time performance incentive",
+    "createdAt": "2026-08-12T18:00:00.000Z"
+  }
+]
