@@ -1,0 +1,10 @@
+[
+  {
+    "consignmentTrackingCode": "VHK002",
+    "type": "PIN",
+    "codeHash": "$2b$10$2BHkLiDL/BSR.cJeJ5N1hOqFurFUhBn5J9mDApcXFAGM/x53I8W3O",
+    "nonce": "ad0c9c0e-2fe4-4429-9c44-502adb7f3223",
+    "expiresAt": "2026-08-20T00:00:00.000Z",
+    "verifiedAt": "2026-08-12T10:30:00.000Z"
+  }
+]
