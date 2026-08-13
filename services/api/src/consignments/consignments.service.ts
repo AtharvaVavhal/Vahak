@@ -359,7 +359,10 @@ export class ConsignmentsService {
     });
   }
 
-  async findById(id: string) {
+  async findById(
+    id: string,
+    user: { id: string; role: 'SENDER' | 'CONDUCTOR' | 'RECIPIENT' | 'ADMIN' },
+  ) {
     const consignment = await this.prisma.consignment.findUnique({
       where: { id },
       include: {
@@ -388,6 +391,17 @@ export class ConsignmentsService {
 
     if (!consignment) {
       throw new NotFoundException('Consignment not found');
+    }
+
+    const isAuthorized =
+      user.role === 'ADMIN' ||
+      (user.role === 'SENDER' && consignment.senderId === user.id) ||
+      (user.role === 'RECIPIENT' && consignment.recipientId === user.id) ||
+      (user.role === 'CONDUCTOR' &&
+        (consignment.conductorId === user.id || consignment.status === 'BOOKED'));
+
+    if (!isAuthorized) {
+      throw new ForbiddenException('You do not have access to this consignment');
     }
 
     return consignment;

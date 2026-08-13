@@ -21,8 +21,8 @@ export class ConsignmentsController {
 
   @Get(':id')
   @UseGuards(JwtAuthGuard)
-  findById(@Param('id') id: string) {
-    return this.consignmentsService.findById(id);
+  findById(@Param('id') id: string, @Req() request: AuthenticatedRequest) {
+    return this.consignmentsService.findById(id, request.user);
   }
 
   @Get()
