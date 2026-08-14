@@ -45,8 +45,8 @@ export function FindDeliveryScreen({ navigation }: Props) {
     <KeyboardAvoidingView style={styles.flex} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
       <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
         <Text style={styles.helperIntro}>
-          {"There's no delivery list exposed to recipients yet — enter the consignment ID given " +
-            'by the sender or conductor.'}
+          Already have a tracking ID? Look it up directly here — otherwise browse your incoming
+          deliveries from the home screen.
         </Text>
 
         {formError ? <ErrorBanner message={formError} /> : null}

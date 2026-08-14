@@ -103,9 +103,18 @@ export interface ConsignmentDetail extends ConsignmentListItem {
 
 /**
  * Body for POST /consignments (services/api/src/consignments/dto/create-consignment.dto.ts).
- * There is no route/halt/bus browsing or recipient-lookup endpoint reachable by a SENDER
- * (see routes/halts/buses controllers — @Roles('ADMIN', 'CONDUCTOR') only), so these IDs
- * currently have to be supplied directly.
+ *
+ * routeId/pickupHaltId/dropoffHaltId now come from the SENDER route-browsing flow
+ * (services/api/sender.ts, GET /routes/available and .../halts) rather than being
+ * typed in by hand — see screens/sender/AvailableRoutesScreen.tsx and SelectHaltsScreen.tsx.
+ * There is still no recipient-lookup endpoint reachable by a SENDER, so recipientId
+ * is supplied directly.
+ *
+ * `fare` is optional and, as of the backend's Milestone 9 fix, is never trusted even
+ * when sent — ConsignmentsService.create() always persists its own server-computed
+ * DEMO_FLAT_FARE and ignores this field. The mobile app must not send it: the server
+ * is the sole authority on price, and no client-side fare calculation exists or should
+ * exist here.
  */
 export interface CreateConsignmentRequest {
   recipientId: string;
@@ -115,7 +124,7 @@ export interface CreateConsignmentRequest {
   parcelSize: ParcelSize;
   busId?: string;
   description?: string;
-  fare: number;
+  fare?: number;
 }
 
 /**

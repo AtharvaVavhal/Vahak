@@ -22,11 +22,16 @@ export function ConductorHomeScreen({ navigation }: Props) {
       </View>
 
       <View style={styles.actions}>
+        <Pressable style={styles.card} onPress={() => navigation.navigate('AvailableConsignments')}>
+          <Text style={styles.cardTitle}>Consignments</Text>
+          <Text style={styles.cardSubtitle}>
+            Browse consignments waiting to be accepted, and ones you&apos;re carrying.
+          </Text>
+        </Pressable>
+
         <Pressable style={styles.card} onPress={() => navigation.navigate('FindConsignment')}>
           <Text style={styles.cardTitle}>Find a consignment</Text>
-          <Text style={styles.cardSubtitle}>
-            {"Look up a booked consignment by ID to accept it, or check one you're carrying."}
-          </Text>
+          <Text style={styles.cardSubtitle}>Look up a specific consignment directly by ID.</Text>
         </Pressable>
       </View>
 

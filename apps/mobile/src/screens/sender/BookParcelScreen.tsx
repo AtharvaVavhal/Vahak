@@ -2,43 +2,34 @@ import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { useCallback, useRef, useState } from 'react';
 import { KeyboardAvoidingView, Platform, ScrollView, StyleSheet, Text } from 'react-native';
 
-import { Button, ErrorBanner, ParcelSizeSelector, TextField } from '../../components';
+import { Button, ErrorBanner, InfoRow, ParcelSizeSelector, TextField } from '../../components';
 import { colors, spacing } from '../../constants/theme';
 import { consignmentsApi } from '../../services/api';
 import type { SenderStackParamList } from '../../navigation/SenderNavigator';
 import { ParcelSize, type CreateConsignmentRequest } from '../../types';
 import { ApiError } from '../../utils/ApiError';
-import {
-  validateFare,
-  validateOptionalUuid,
-  validateRequiredUuid,
-} from '../../utils/validation';
+import { validateOptionalUuid, validateRequiredUuid } from '../../utils/validation';
 
 type Props = NativeStackScreenProps<SenderStackParamList, 'BookParcel'>;
 
 interface FormState {
   recipientId: string;
-  routeId: string;
-  pickupHaltId: string;
-  dropoffHaltId: string;
   busId: string;
   description: string;
-  fare: string;
 }
 
 const initialForm: FormState = {
   recipientId: '',
-  routeId: '',
-  pickupHaltId: '',
-  dropoffHaltId: '',
   busId: '',
   description: '',
-  fare: '',
 };
 
 type FieldErrors = Partial<Record<keyof FormState, string>>;
 
-export function BookParcelScreen({ navigation }: Props) {
+export function BookParcelScreen({ route, navigation }: Props) {
+  const { routeId, routeName, routeRef, pickupHaltId, pickupHaltName, dropoffHaltId, dropoffHaltName } =
+    route.params;
+
   const [form, setForm] = useState<FormState>(initialForm);
   const [parcelSize, setParcelSize] = useState<ParcelSize>(ParcelSize.SMALL);
   const [fieldErrors, setFieldErrors] = useState<FieldErrors>({});
@@ -57,23 +48,22 @@ export function BookParcelScreen({ navigation }: Props) {
 
     const errors: FieldErrors = {
       recipientId: validateRequiredUuid('Recipient ID', form.recipientId) ?? undefined,
-      routeId: validateRequiredUuid('Route ID', form.routeId) ?? undefined,
-      pickupHaltId: validateRequiredUuid('Pickup halt ID', form.pickupHaltId) ?? undefined,
-      dropoffHaltId: validateRequiredUuid('Dropoff halt ID', form.dropoffHaltId) ?? undefined,
       busId: validateOptionalUuid('Bus ID', form.busId) ?? undefined,
-      fare: validateFare(form.fare) ?? undefined,
     };
     setFieldErrors(errors);
     setFormError(null);
     if (Object.values(errors).some(Boolean)) return;
 
+    // Route/pickup/dropoff come from the browsing flow (AvailableRoutesScreen ->
+    // SelectHaltsScreen), never typed by hand. `fare` is intentionally omitted —
+    // the backend is the sole authority on price (see types/consignment.ts) and
+    // always assigns its own server-computed demo fare regardless of what's sent.
     const payload: CreateConsignmentRequest = {
       recipientId: form.recipientId.trim(),
-      routeId: form.routeId.trim(),
-      pickupHaltId: form.pickupHaltId.trim(),
-      dropoffHaltId: form.dropoffHaltId.trim(),
+      routeId,
+      pickupHaltId,
+      dropoffHaltId,
       parcelSize,
-      fare: Number(form.fare),
       ...(form.busId.trim() ? { busId: form.busId.trim() } : {}),
       ...(form.description.trim() ? { description: form.description.trim() } : {}),
     };
@@ -100,17 +90,20 @@ export function BookParcelScreen({ navigation }: Props) {
       submittingRef.current = false;
       setSubmitting(false);
     }
-  }, [form, parcelSize, navigation]);
+  }, [form, parcelSize, routeId, pickupHaltId, dropoffHaltId, navigation]);
 
   return (
     <KeyboardAvoidingView style={styles.flex} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
       <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
-        <Text style={styles.helperIntro}>
-          {"Routes, halts, and recipient accounts aren't browsable from the app yet — ask your admin or " +
-            'conductor for the IDs below.'}
-        </Text>
+        <Text style={styles.sectionTitle}>Booking review</Text>
+        <InfoRow label="Route" value={routeRef ? `${routeRef} · ${routeName}` : routeName} />
+        <InfoRow label="Pickup" value={pickupHaltName} />
+        <InfoRow label="Dropoff" value={dropoffHaltName} />
+        <InfoRow label="Fare" value="Determined by the server after booking" />
 
         {formError ? <ErrorBanner message={formError} /> : null}
+
+        <Text style={styles.sectionTitle}>Consignment details</Text>
 
         <TextField
           label="Recipient ID *"
@@ -118,39 +111,6 @@ export function BookParcelScreen({ navigation }: Props) {
           onChangeText={setField('recipientId')}
           error={fieldErrors.recipientId}
           placeholder="Recipient's account ID"
-          autoCapitalize="none"
-          autoCorrect={false}
-          editable={!submitting}
-        />
-
-        <TextField
-          label="Route ID *"
-          value={form.routeId}
-          onChangeText={setField('routeId')}
-          error={fieldErrors.routeId}
-          placeholder="Bus route ID"
-          autoCapitalize="none"
-          autoCorrect={false}
-          editable={!submitting}
-        />
-
-        <TextField
-          label="Pickup halt ID *"
-          value={form.pickupHaltId}
-          onChangeText={setField('pickupHaltId')}
-          error={fieldErrors.pickupHaltId}
-          placeholder="Pickup halt ID"
-          autoCapitalize="none"
-          autoCorrect={false}
-          editable={!submitting}
-        />
-
-        <TextField
-          label="Dropoff halt ID *"
-          value={form.dropoffHaltId}
-          onChangeText={setField('dropoffHaltId')}
-          error={fieldErrors.dropoffHaltId}
-          placeholder="Dropoff halt ID"
           autoCapitalize="none"
           autoCorrect={false}
           editable={!submitting}
@@ -179,16 +139,6 @@ export function BookParcelScreen({ navigation }: Props) {
           editable={!submitting}
         />
 
-        <TextField
-          label="Fare (₹) *"
-          value={form.fare}
-          onChangeText={setField('fare')}
-          error={fieldErrors.fare}
-          placeholder="0.00"
-          keyboardType="decimal-pad"
-          editable={!submitting}
-        />
-
         <Button label="Confirm booking" onPress={handleSubmit} loading={submitting} disabled={submitting} />
       </ScrollView>
     </KeyboardAvoidingView>
@@ -205,8 +155,11 @@ const styles = StyleSheet.create({
     padding: spacing.lg,
     gap: spacing.md,
   },
-  helperIntro: {
+  sectionTitle: {
     fontSize: 13,
+    fontWeight: '700',
     color: colors.textMuted,
+    textTransform: 'uppercase',
+    marginTop: spacing.sm,
   },
 });

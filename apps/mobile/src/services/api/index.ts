@@ -3,3 +3,4 @@ export * as adminApi from './admin';
 export * as authApi from './auth';
 export * as consignmentsApi from './consignments';
 export * as healthApi from './health';
+export * as senderRoutesApi from './senderRoutes';

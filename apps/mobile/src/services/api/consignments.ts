@@ -37,6 +37,26 @@ export async function getMyConsignments(): Promise<ConsignmentListItem[]> {
   return data;
 }
 
+/**
+ * GET /consignments/conductor — @Roles('CONDUCTOR'). Every consignment currently BOOKED
+ * (unclaimed — any conductor may accept, there's no route/assignment matching) plus every
+ * consignment this conductor has already accepted, at any later status. Same authorization
+ * predicate as findById's existing CONDUCTOR rule, expressed as a list.
+ */
+export async function getConductorConsignments(): Promise<ConsignmentDetail[]> {
+  const { data } = await apiClient.get<ConsignmentDetail[]>('/consignments/conductor');
+  return data;
+}
+
+/**
+ * GET /consignments/recipient — @Roles('RECIPIENT'). Every consignment naming this user as
+ * recipientId, at any status — the recipient-side mirror of getMyConsignments.
+ */
+export async function getRecipientConsignments(): Promise<ConsignmentDetail[]> {
+  const { data } = await apiClient.get<ConsignmentDetail[]>('/consignments/recipient');
+  return data;
+}
+
 /** GET /consignments/:id (findById) — no server-side ownership check on this endpoint. */
 export async function getConsignmentById(id: string): Promise<ConsignmentDetail> {
   const { data } = await apiClient.get<ConsignmentDetail>(`/consignments/${id}`);

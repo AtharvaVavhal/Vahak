@@ -22,9 +22,9 @@ export function SenderHomeScreen({ navigation }: Props) {
       </View>
 
       <View style={styles.actions}>
-        <Pressable style={styles.card} onPress={() => navigation.navigate('BookParcel')}>
+        <Pressable style={styles.card} onPress={() => navigation.navigate('AvailableRoutes')}>
           <Text style={styles.cardTitle}>Book a parcel</Text>
-          <Text style={styles.cardSubtitle}>Create a new consignment for a bus route.</Text>
+          <Text style={styles.cardSubtitle}>Browse available routes and stops.</Text>
         </Pressable>
 
         <Pressable style={styles.card} onPress={() => navigation.navigate('MyConsignments')}>

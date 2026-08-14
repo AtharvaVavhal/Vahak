@@ -22,11 +22,14 @@ export function RecipientHomeScreen({ navigation }: Props) {
       </View>
 
       <View style={styles.actions}>
+        <Pressable style={styles.card} onPress={() => navigation.navigate('IncomingDeliveries')}>
+          <Text style={styles.cardTitle}>Incoming deliveries</Text>
+          <Text style={styles.cardSubtitle}>See parcels sent to you and their current status.</Text>
+        </Pressable>
+
         <Pressable style={styles.card} onPress={() => navigation.navigate('FindDelivery')}>
           <Text style={styles.cardTitle}>Find a delivery</Text>
-          <Text style={styles.cardSubtitle}>
-            {"Look up a consignment by ID to check its status or verify a handover PIN."}
-          </Text>
+          <Text style={styles.cardSubtitle}>Look up a specific consignment directly by ID.</Text>
         </Pressable>
       </View>
 

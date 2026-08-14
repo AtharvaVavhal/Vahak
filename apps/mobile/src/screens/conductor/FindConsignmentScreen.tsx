@@ -45,8 +45,8 @@ export function FindConsignmentScreen({ navigation }: Props) {
     <KeyboardAvoidingView style={styles.flex} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
       <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
         <Text style={styles.helperIntro}>
-          {"There's no bookable-consignment queue exposed to conductors yet — enter the ID given " +
-            'by the sender or dispatcher.'}
+          Already have a tracking ID? Look it up directly here — otherwise browse consignments
+          waiting to be accepted from the home screen.
         </Text>
 
         {formError ? <ErrorBanner message={formError} /> : null}
