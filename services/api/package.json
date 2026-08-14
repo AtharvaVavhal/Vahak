@@ -17,7 +17,11 @@
     "test:watch": "jest --watch",
     "test:cov": "jest --coverage",
     "test:debug": "node --inspect-brk -r tsconfig-paths/register -r ts-node/register node_modules/.bin/jest --runInBand",
-    "test:e2e": "jest --config ./test/jest-e2e.json"
+    "test:e2e": "jest --config ./test/jest-e2e.json",
+    "qa:seed": "tsc --project ../../database/seed/tsconfig.json && node ../../database/seed/dist/database/seed/qa-seed.js",
+    "qa:reset": "tsc --project ../../database/seed/tsconfig.json && node ../../database/seed/dist/database/seed/qa-reset.js",
+    "osm:ingest": "tsc --project ../../database/ingestion/tsconfig.json && node ../../database/ingestion/dist/database/ingestion/osm-import.js",
+    "osm:ingest:reset": "tsc --project ../../database/ingestion/tsconfig.json && node ../../database/ingestion/dist/database/ingestion/osm-reset.js"
   },
   "dependencies": {
     "@nestjs/common": "^11.0.1",

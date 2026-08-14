@@ -7,6 +7,27 @@ import {
 import { createHash, randomInt } from 'crypto';
 import { PrismaService } from '../shared/prisma/prisma.service';
 import { CreateConsignmentDto } from './dto/create-consignment.dto';
+import { resolveDemoFare } from './fare';
+import { toPublicBus, toPublicHalt, toPublicRoute } from '../shared/provenance';
+import type { Bus, Halt, Route } from '../generated/prisma/client';
+
+/**
+ * Strips internal provenance fields from the route/halts/bus nested inside
+ * a consignment response. Used everywhere a consignment is returned to
+ * SENDER/CONDUCTOR/RECIPIENT — never for ADMIN (see findById, the one
+ * caller-role-dependent case).
+ */
+function stripConsignmentProvenance<
+  T extends { route: Route; pickupHalt: Halt; dropoffHalt: Halt; bus: Bus | null },
+>(consignment: T) {
+  return {
+    ...consignment,
+    route: toPublicRoute(consignment.route),
+    pickupHalt: toPublicHalt(consignment.pickupHalt),
+    dropoffHalt: toPublicHalt(consignment.dropoffHalt),
+    bus: consignment.bus ? toPublicBus(consignment.bus) : null,
+  };
+}
 
 @Injectable()
 export class ConsignmentsService {
@@ -45,6 +66,14 @@ export class ConsignmentsService {
       throw new NotFoundException('Dropoff halt not found');
     }
 
+    if (pickupHalt.routeId !== route.id) {
+      throw new BadRequestException('Pickup halt does not belong to the selected route');
+    }
+
+    if (dropoffHalt.routeId !== route.id) {
+      throw new BadRequestException('Dropoff halt does not belong to the selected route');
+    }
+
     // Validate bus if provided
     if (input.busId) {
       const bus = await this.prisma.bus.findUnique({
@@ -56,12 +85,19 @@ export class ConsignmentsService {
       if (!bus.active) {
         throw new BadRequestException('Selected bus is inactive');
       }
+      if (bus.routeId !== route.id) {
+        throw new BadRequestException('Selected bus does not belong to the selected route');
+      }
     }
 
     const trackingCode = `VHK-${Date.now()}-${Math.random()
       .toString(36)
       .slice(2, 8)
       .toUpperCase()}`;
+
+    // Server-authoritative: input.fare (client-supplied) is intentionally
+    // never read here. See ./fare.ts.
+    const fare = resolveDemoFare();
 
     return this.prisma.$transaction(async (tx) => {
       const consignment = await tx.consignment.create({
@@ -74,7 +110,7 @@ export class ConsignmentsService {
           dropoffHaltId: input.dropoffHaltId,
           parcelSize: input.parcelSize,
           description: input.description,
-          fare: input.fare,
+          fare,
           busId: input.busId,
           status: 'CREATED',
         },
@@ -334,8 +370,102 @@ export class ConsignmentsService {
     });
   }
 
+  /**
+   * Discovery list for CONDUCTOR: every consignment currently BOOKED (and
+   * therefore unclaimed — book() never touches conductorId, only accept()
+   * does, in the same transition that leaves BOOKED), plus every consignment
+   * this specific conductor has already accepted, at any subsequent status.
+   *
+   * This is not a new authorization rule — it is exactly findById's existing
+   * CONDUCTOR predicate (`consignment.conductorId === user.id ||
+   * consignment.status === 'BOOKED'`), expressed as a list query instead of
+   * a single-item lookup. Any conductor may accept any BOOKED consignment —
+   * there is no route/bus assignment restricting which conductor sees what.
+   */
+  async findForConductor(conductorId: string) {
+    const consignments = await this.prisma.consignment.findMany({
+      where: {
+        OR: [{ status: 'BOOKED' }, { conductorId }],
+      },
+      orderBy: {
+        createdAt: 'desc',
+      },
+      include: {
+        sender: {
+          select: {
+            id: true,
+            name: true,
+            phone: true,
+            email: true,
+          },
+        },
+        recipient: {
+          select: {
+            id: true,
+            name: true,
+            phone: true,
+            email: true,
+          },
+        },
+        route: true,
+        pickupHalt: true,
+        dropoffHalt: true,
+        bus: true,
+      },
+    });
+
+    return consignments.map(stripConsignmentProvenance);
+  }
+
+  /**
+   * Discovery list for RECIPIENT: every consignment naming this user as
+   * recipientId, at any status — mirrors findMine's shape exactly (same
+   * ordering, same unrestricted-by-status scope), just keyed on recipientId
+   * instead of senderId. Matches findById's existing RECIPIENT predicate
+   * (`consignment.recipientId === user.id`, no status restriction).
+   *
+   * Includes `recipient` (i.e. the caller's own summary) even though it's
+   * redundant, so this shares the exact same response shape as findById/
+   * findForConductor (ConsignmentDetail) instead of introducing a one-off
+   * projection — harmless, since it's just the caller's own information.
+   */
+  async findForRecipient(recipientId: string) {
+    const consignments = await this.prisma.consignment.findMany({
+      where: {
+        recipientId,
+      },
+      orderBy: {
+        createdAt: 'desc',
+      },
+      include: {
+        sender: {
+          select: {
+            id: true,
+            name: true,
+            phone: true,
+            email: true,
+          },
+        },
+        recipient: {
+          select: {
+            id: true,
+            name: true,
+            phone: true,
+            email: true,
+          },
+        },
+        route: true,
+        pickupHalt: true,
+        dropoffHalt: true,
+        bus: true,
+      },
+    });
+
+    return consignments.map(stripConsignmentProvenance);
+  }
+
   async findMine(senderId: string) {
-    return this.prisma.consignment.findMany({
+    const consignments = await this.prisma.consignment.findMany({
       where: {
         senderId,
       },
@@ -357,6 +487,8 @@ export class ConsignmentsService {
         bus: true,
       },
     });
+
+    return consignments.map(stripConsignmentProvenance);
   }
 
   async findById(
@@ -404,7 +536,7 @@ export class ConsignmentsService {
       throw new ForbiddenException('You do not have access to this consignment');
     }
 
-    return consignment;
+    return user.role === 'ADMIN' ? consignment : stripConsignmentProvenance(consignment);
   }
 
   async cancel(id: string, senderId: string) {

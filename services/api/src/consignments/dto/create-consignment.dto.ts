@@ -26,8 +26,14 @@ export class CreateConsignmentDto {
   @IsString()
   description?: string;
 
+  /**
+   * Accepted for backward compatibility with existing callers, but never
+   * trusted: ConsignmentsService.create() always persists a server-computed
+   * fare and ignores this value. See ../fare.ts.
+   */
+  @IsOptional()
   @Type(() => Number)
   @IsNumber()
   @Min(0)
-  fare: number;
+  fare?: number;
 }

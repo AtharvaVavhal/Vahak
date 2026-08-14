@@ -29,11 +29,20 @@ model Route {
   name         String
   origin       String
   destination  String
+  routeRef     String?
+  direction    String?
+  dataSource   DataSource    @default(SIMULATED)
+  provider     String?
+  externalId   String?
+  sourceUrl    String?
+  fetchedAt    DateTime?     @db.Timestamptz
   createdAt    DateTime      @default(now()) @db.Timestamptz
   updatedAt    DateTime      @updatedAt @db.Timestamptz
   buses        Bus[]
   consignments Consignment[]
   halts        Halt[]
+
+  @@unique([provider, externalId])
 }
 
 model Halt {
@@ -43,11 +52,17 @@ model Halt {
   sequence            Int
   latitude            Decimal?      @db.Decimal(10, 7)
   longitude           Decimal?      @db.Decimal(10, 7)
+  dataSource          DataSource    @default(SIMULATED)
+  provider            String?
+  externalId          String?
+  sourceUrl           String?
+  fetchedAt           DateTime?     @db.Timestamptz
   dropoffConsignments Consignment[] @relation("DropoffHalt")
   pickupConsignments  Consignment[] @relation("PickupHalt")
   route               Route         @relation(fields: [routeId], references: [id], onDelete: Cascade)
 
   @@unique([routeId, sequence])
+  @@unique([provider, externalId])
 }
 
 model Bus {
@@ -55,9 +70,16 @@ model Bus {
   registration String        @unique
   routeId      String
   active       Boolean       @default(true)
+  dataSource   DataSource    @default(SIMULATED)
+  provider     String?
+  externalId   String?
+  sourceUrl    String?
+  fetchedAt    DateTime?     @db.Timestamptz
   createdAt    DateTime      @default(now()) @db.Timestamptz
   route        Route         @relation(fields: [routeId], references: [id])
   consignments Consignment[]
+
+  @@unique([provider, externalId])
 }
 
 model Consignment {
@@ -169,4 +191,12 @@ enum EventType {
 enum ProofType {
   QR
   PIN
+}
+
+enum DataSource {
+  REAL
+  PUBLIC_THIRD_PARTY
+  COMMUNITY_DERIVED
+  DERIVED
+  SIMULATED
 }

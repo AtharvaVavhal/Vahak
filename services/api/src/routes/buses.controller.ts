@@ -1,10 +1,20 @@
-import { Controller, Get, Post, Patch, Delete, Param, Body, UseGuards } from '@nestjs/common';
+import { Controller, Get, Post, Patch, Delete, Param, Body, Req, UseGuards } from '@nestjs/common';
+import type { Request } from 'express';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../auth/guards/roles.guard';
 import { Roles } from '../auth/decorators/roles.decorator';
 import { BusesService } from './buses.service';
 import { CreateBusDto } from './dto/create-bus.dto';
 import { UpdateBusDto } from './dto/update-bus.dto';
+import { toPublicBus } from '../shared/provenance';
+
+interface AuthenticatedRequest extends Request {
+  user: {
+    id: string;
+    phone: string;
+    role: 'SENDER' | 'CONDUCTOR' | 'RECIPIENT' | 'ADMIN';
+  };
+}
 
 @UseGuards(JwtAuthGuard, RolesGuard)
 @Controller('routes/:routeId/buses')
@@ -17,10 +27,12 @@ export class BusesController {
     return this.busesService.create(routeId, dto);
   }
 
+  // Shared by ADMIN and CONDUCTOR; CONDUCTOR never sees provenance fields.
   @Get()
   @Roles('ADMIN', 'CONDUCTOR')
-  findAll(@Param('routeId') routeId: string) {
-    return this.busesService.findAllByRoute(routeId);
+  async findAll(@Param('routeId') routeId: string, @Req() request: AuthenticatedRequest) {
+    const buses = await this.busesService.findAllByRoute(routeId);
+    return request.user.role === 'ADMIN' ? buses : buses.map(toPublicBus);
   }
 }
 
@@ -31,8 +43,9 @@ export class BusesSingleController {
 
   @Get(':id')
   @Roles('ADMIN', 'CONDUCTOR')
-  findOne(@Param('id') id: string) {
-    return this.busesService.findOne(id);
+  async findOne(@Param('id') id: string, @Req() request: AuthenticatedRequest) {
+    const bus = await this.busesService.findOne(id);
+    return request.user.role === 'ADMIN' ? bus : toPublicBus(bus);
   }
 
   @Patch(':id')

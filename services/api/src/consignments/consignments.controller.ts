@@ -19,6 +19,24 @@ interface AuthenticatedRequest extends Request {
 export class ConsignmentsController {
   constructor(private readonly consignmentsService: ConsignmentsService) {}
 
+  // 'conductor' and 'recipient' are declared before ':id' so Nest/Express
+  // matches these static paths first — otherwise GET /consignments/conductor
+  // would be captured by findById below with id="conductor".
+
+  @Get('conductor')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('CONDUCTOR')
+  findForConductor(@Req() request: AuthenticatedRequest) {
+    return this.consignmentsService.findForConductor(request.user.id);
+  }
+
+  @Get('recipient')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('RECIPIENT')
+  findForRecipient(@Req() request: AuthenticatedRequest) {
+    return this.consignmentsService.findForRecipient(request.user.id);
+  }
+
   @Get(':id')
   @UseGuards(JwtAuthGuard)
   findById(@Param('id') id: string, @Req() request: AuthenticatedRequest) {
