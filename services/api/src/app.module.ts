@@ -13,7 +13,7 @@ import { AuthModule } from './auth/auth.module';
     ConsignmentsModule,
     RoutesModule,
     PrismaModule,
-    ConfigModule.forRoot({ isGlobal: true }),
+    ConfigModule.forRoot({ isGlobal: true, envFilePath: ['../../.env', '.env'] }),
     AuthModule,
   ],
   controllers: [AppController, HealthController],
