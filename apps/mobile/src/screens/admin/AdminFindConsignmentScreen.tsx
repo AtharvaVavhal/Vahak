@@ -1,9 +1,9 @@
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { useCallback, useRef, useState } from 'react';
-import { KeyboardAvoidingView, Platform, ScrollView, StyleSheet, Text } from 'react-native';
+import { StyleSheet, Text } from 'react-native';
 
-import { Button, ErrorBanner, TextField } from '../../components';
-import { colors, spacing } from '../../constants/theme';
+import { Button, ErrorBanner, Screen, TextField } from '../../components';
+import { colors, typography } from '../../constants/theme';
 import { consignmentsApi } from '../../services/api';
 import type { AdminStackParamList } from '../../navigation/AdminNavigator';
 import { ApiError } from '../../utils/ApiError';
@@ -41,47 +41,43 @@ export function AdminFindConsignmentScreen({ navigation }: Props) {
   }, [consignmentId, navigation]);
 
   return (
-    <KeyboardAvoidingView style={styles.flex} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
-      <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
-        <Text style={styles.helperIntro}>
-          {"There's no consignment-wide listing endpoint exposed to admins yet — enter a " +
-            'specific consignment ID to view it.'}
-        </Text>
+    <Screen>
+      <Text style={styles.helperIntro}>
+        {"There's no consignment-wide listing endpoint exposed to admins yet — enter a " +
+          'specific consignment ID to view it.'}
+      </Text>
 
-        {formError ? <ErrorBanner message={formError} /> : null}
+      {formError ? <ErrorBanner message={formError} /> : null}
 
-        <TextField
-          label="Consignment ID *"
-          value={consignmentId}
-          onChangeText={(text) => {
-            setConsignmentId(text);
-            if (fieldError) setFieldError(undefined);
-          }}
-          error={fieldError}
-          placeholder="Consignment ID"
-          autoCapitalize="none"
-          autoCorrect={false}
-          editable={!submitting}
-        />
+      <TextField
+        testID="admin-find-consignment-id-input"
+        label="Consignment ID *"
+        value={consignmentId}
+        onChangeText={(text) => {
+          setConsignmentId(text);
+          if (fieldError) setFieldError(undefined);
+        }}
+        error={fieldError}
+        placeholder="Consignment ID"
+        autoCapitalize="none"
+        autoCorrect={false}
+        editable={!submitting}
+      />
 
-        <Button label="Look up" onPress={handleLookup} loading={submitting} disabled={submitting} />
-      </ScrollView>
-    </KeyboardAvoidingView>
+      <Button
+        testID="admin-find-consignment-lookup-button"
+        label="Look up"
+        onPress={handleLookup}
+        loading={submitting}
+        disabled={submitting}
+      />
+    </Screen>
   );
 }
 
 const styles = StyleSheet.create({
-  flex: {
-    flex: 1,
-    backgroundColor: colors.background,
-  },
-  content: {
-    flexGrow: 1,
-    padding: spacing.lg,
-    gap: spacing.md,
-  },
   helperIntro: {
-    fontSize: 13,
+    fontSize: typography.size.sm,
     color: colors.textMuted,
   },
 });

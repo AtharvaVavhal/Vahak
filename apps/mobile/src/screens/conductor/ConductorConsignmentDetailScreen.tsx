@@ -1,24 +1,19 @@
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { ActivityIndicator, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { View } from 'react-native';
 
-import { Button, ErrorBanner, InfoRow, StatusBadge } from '../../components';
-import {
-  CONSIGNMENT_STATUS_WORKFLOW,
-  CONSIGNMENT_STATUS_LABELS,
-  PARCEL_SIZE_LABELS,
-} from '../../constants/consignment';
-import { colors, spacing } from '../../constants/theme';
+import { Button, ConsignmentDetailView, ErrorBanner, HandoverPinSheet, LoadingState } from '../../components';
+import { spacing } from '../../constants/theme';
 import { useAuth } from '../../hooks';
 import { consignmentsApi } from '../../services/api';
 import type { ConductorStackParamList } from '../../navigation/ConductorNavigator';
-import { ConsignmentStatus, type ConsignmentDetail } from '../../types';
+import { ConsignmentStatus, UserRole, type ConsignmentDetail } from '../../types';
 import { ApiError } from '../../utils/ApiError';
-import { formatDateTime, formatFare } from '../../utils/format';
+import { confirmAction } from '../../utils/confirm';
 
 type Props = NativeStackScreenProps<ConductorStackParamList, 'ConductorConsignmentDetail'>;
 
-interface RevealedHandover {
+export interface RevealedHandover {
   pin: string;
   expiresAt: string;
 }
@@ -76,6 +71,15 @@ export function ConductorConsignmentDetailScreen({ route }: Props) {
     }
   }, [consignmentId]);
 
+  const handleAcceptPress = useCallback(() => {
+    confirmAction(
+      'Accept this consignment?',
+      "You'll be responsible for carrying it to the dropoff halt.",
+      'Accept',
+      performAccept,
+    );
+  }, [performAccept]);
+
   const performInitiateHandover = useCallback(async () => {
     if (handingOverRef.current) return;
     handingOverRef.current = true;
@@ -94,237 +98,73 @@ export function ConductorConsignmentDetailScreen({ route }: Props) {
     }
   }, [consignmentId]);
 
-  if (loading) {
-    return (
-      <View style={styles.centered}>
-        <ActivityIndicator color={colors.primary} />
-      </View>
+  const handleInitiateHandoverPress = useCallback(() => {
+    confirmAction(
+      'Start handover?',
+      "This generates a one-time PIN for the recipient. You'll only see it once.",
+      'Start handover',
+      performInitiateHandover,
     );
+  }, [performInitiateHandover]);
+
+  if (loading) {
+    return <LoadingState />;
   }
 
   if (loadError || !consignment) {
     return (
-      <View style={styles.centered}>
+      <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', padding: spacing.lg, gap: spacing.md }}>
         <ErrorBanner message={loadError ?? 'Consignment not found.'} />
-        <Button label="Retry" onPress={load} />
+        <Button label="Retry" onPress={load} variant="secondary" />
       </View>
     );
   }
 
-  const isCancelled = consignment.status === ConsignmentStatus.CANCELLED;
   const isMyAcceptedConsignment = consignment.conductorId === user?.id;
   const canAccept = consignment.status === ConsignmentStatus.BOOKED;
   const canInitiateHandover =
     consignment.status === ConsignmentStatus.ACCEPTED && isMyAcceptedConsignment;
 
   return (
-    <ScrollView contentContainerStyle={styles.content}>
-      <View style={styles.header}>
-        <Text style={styles.trackingCode}>{consignment.trackingCode}</Text>
-        <StatusBadge status={consignment.status} />
-      </View>
+    <>
+      <ConsignmentDetailView
+        consignment={consignment}
+        viewerRole={UserRole.CONDUCTOR}
+        isMine={isMyAcceptedConsignment}
+        action={
+          <View style={{ gap: spacing.sm }}>
+            {acceptError ? <ErrorBanner message={acceptError} /> : null}
+            {handoverError ? <ErrorBanner message={handoverError} /> : null}
 
-      {!isCancelled ? (
-        <View style={styles.workflow}>
-          {CONSIGNMENT_STATUS_WORKFLOW.map((step, index) => {
-            const stepIndex = CONSIGNMENT_STATUS_WORKFLOW.indexOf(consignment.status);
-            const reached = stepIndex >= 0 && index <= stepIndex;
-            return (
-              <View key={step} style={styles.workflowStep}>
-                <View style={[styles.workflowDot, reached && styles.workflowDotReached]} />
-                <Text style={[styles.workflowLabel, reached && styles.workflowLabelReached]}>
-                  {CONSIGNMENT_STATUS_LABELS[step]}
-                </Text>
-              </View>
-            );
-          })}
-        </View>
-      ) : null}
+            {canAccept ? (
+              <Button
+                label="Accept consignment"
+                onPress={handleAcceptPress}
+                loading={accepting}
+                disabled={accepting}
+              />
+            ) : null}
 
-      <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Parcel</Text>
-        <InfoRow label="Size" value={PARCEL_SIZE_LABELS[consignment.parcelSize]} />
-        {consignment.description ? <InfoRow label="Description" value={consignment.description} /> : null}
-        <InfoRow label="Fare" value={formatFare(consignment.fare)} />
-      </View>
-
-      <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Route</Text>
-        <InfoRow label="Route" value={`${consignment.route.origin} → ${consignment.route.destination}`} />
-        <InfoRow label="Pickup halt" value={consignment.pickupHalt.name} />
-        <InfoRow label="Dropoff halt" value={consignment.dropoffHalt.name} />
-        {consignment.bus ? <InfoRow label="Bus" value={consignment.bus.registration} /> : null}
-      </View>
-
-      <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Sender</Text>
-        <InfoRow label="Name" value={consignment.sender.name} />
-        <InfoRow label="Phone" value={consignment.sender.phone} />
-      </View>
-
-      <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Recipient</Text>
-        <InfoRow label="Name" value={consignment.recipient.name} />
-        <InfoRow label="Phone" value={consignment.recipient.phone} />
-      </View>
-
-      <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Timeline</Text>
-        <InfoRow label="Created" value={formatDateTime(consignment.createdAt)} />
-        <InfoRow label="Last updated" value={formatDateTime(consignment.updatedAt)} />
-      </View>
+            {canInitiateHandover && !revealedHandover ? (
+              <Button
+                label="Start handover"
+                onPress={handleInitiateHandoverPress}
+                loading={handingOver}
+                disabled={handingOver}
+              />
+            ) : null}
+          </View>
+        }
+      />
 
       {revealedHandover ? (
-        <View style={styles.pinCard}>
-          <Text style={styles.pinCardTitle}>Handover PIN</Text>
-          <Text style={styles.pinValue}>{revealedHandover.pin}</Text>
-          <Text style={styles.pinNotice}>
-            {'Share this with the recipient now — it will not be shown again. Expires ' +
-              formatDateTime(revealedHandover.expiresAt) +
-              '.'}
-          </Text>
-        </View>
-      ) : null}
-
-      {acceptError ? <ErrorBanner message={acceptError} /> : null}
-      {handoverError ? <ErrorBanner message={handoverError} /> : null}
-
-      {canAccept ? (
-        <Button
-          label="Accept consignment"
-          onPress={performAccept}
-          loading={accepting}
-          disabled={accepting}
+        <HandoverPinSheet
+          visible
+          pin={revealedHandover.pin}
+          expiresAt={revealedHandover.expiresAt}
+          onDone={() => setRevealedHandover(null)}
         />
       ) : null}
-
-      {consignment.status === ConsignmentStatus.ACCEPTED && !isMyAcceptedConsignment ? (
-        <Text style={styles.notice}>This consignment was already accepted by another conductor.</Text>
-      ) : null}
-
-      {canInitiateHandover ? (
-        <Button
-          label="Start handover"
-          onPress={performInitiateHandover}
-          loading={handingOver}
-          disabled={handingOver}
-        />
-      ) : null}
-
-      {consignment.status === ConsignmentStatus.IN_TRANSIT && !revealedHandover ? (
-        <Text style={styles.notice}>
-          {'The handover PIN was already issued to the recipient earlier and cannot be shown again. ' +
-            'The recipient completes delivery by verifying it in their own app.'}
-        </Text>
-      ) : null}
-
-      {consignment.status === ConsignmentStatus.CREATED ? (
-        <Text style={styles.notice}>
-          {"This consignment hasn't been booked by the sender yet, so it can't be accepted."}
-        </Text>
-      ) : null}
-
-      {consignment.status === ConsignmentStatus.DELIVERED ? (
-        <Text style={styles.notice}>This consignment has already been delivered.</Text>
-      ) : null}
-
-      {isCancelled ? <Text style={styles.notice}>This consignment was cancelled.</Text> : null}
-    </ScrollView>
+    </>
   );
 }
-
-const styles = StyleSheet.create({
-  centered: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-    padding: spacing.lg,
-    gap: spacing.md,
-  },
-  content: {
-    padding: spacing.lg,
-    gap: spacing.lg,
-  },
-  header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-  },
-  trackingCode: {
-    fontSize: 16,
-    fontWeight: '700',
-    color: colors.text,
-  },
-  workflow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-  },
-  workflowStep: {
-    flex: 1,
-    alignItems: 'center',
-    gap: spacing.xs,
-  },
-  workflowDot: {
-    width: 10,
-    height: 10,
-    borderRadius: 5,
-    backgroundColor: colors.border,
-  },
-  workflowDotReached: {
-    backgroundColor: colors.primary,
-  },
-  workflowLabel: {
-    fontSize: 10,
-    color: colors.textMuted,
-    textAlign: 'center',
-  },
-  workflowLabelReached: {
-    color: colors.primary,
-    fontWeight: '600',
-  },
-  section: {
-    borderWidth: 1,
-    borderColor: colors.border,
-    borderRadius: 12,
-    padding: spacing.md,
-    gap: spacing.xs,
-    backgroundColor: colors.surface,
-  },
-  sectionTitle: {
-    fontSize: 13,
-    fontWeight: '700',
-    color: colors.text,
-    marginBottom: spacing.xs,
-  },
-  pinCard: {
-    borderWidth: 1,
-    borderColor: colors.primary,
-    borderRadius: 12,
-    padding: spacing.lg,
-    backgroundColor: '#EFF6FF',
-    alignItems: 'center',
-    gap: spacing.xs,
-  },
-  pinCardTitle: {
-    fontSize: 13,
-    fontWeight: '700',
-    color: colors.primary,
-    textTransform: 'uppercase',
-    letterSpacing: 0.5,
-  },
-  pinValue: {
-    fontSize: 36,
-    fontWeight: '800',
-    letterSpacing: 6,
-    color: colors.text,
-  },
-  pinNotice: {
-    fontSize: 12,
-    color: colors.textMuted,
-    textAlign: 'center',
-  },
-  notice: {
-    fontSize: 13,
-    color: colors.textMuted,
-  },
-});

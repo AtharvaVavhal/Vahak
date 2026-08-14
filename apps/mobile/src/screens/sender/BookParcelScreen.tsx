@@ -1,13 +1,15 @@
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { useCallback, useRef, useState } from 'react';
-import { KeyboardAvoidingView, Platform, ScrollView, StyleSheet, Text } from 'react-native';
+import { StyleSheet, Text, View } from 'react-native';
 
-import { Button, ErrorBanner, InfoRow, ParcelSizeSelector, TextField } from '../../components';
-import { colors, spacing } from '../../constants/theme';
+import { Button, Card, ErrorBanner, InfoRow, ParcelSizeSelector, Screen, StepIndicator, TextField } from '../../components';
+import { ICONS } from '../../constants/icons';
+import { colors, radius, spacing, typography } from '../../constants/theme';
 import { consignmentsApi } from '../../services/api';
 import type { SenderStackParamList } from '../../navigation/SenderNavigator';
 import { ParcelSize, type CreateConsignmentRequest } from '../../types';
 import { ApiError } from '../../utils/ApiError';
+import { confirmAction } from '../../utils/confirm';
 import { validateOptionalUuid, validateRequiredUuid } from '../../utils/validation';
 
 type Props = NativeStackScreenProps<SenderStackParamList, 'BookParcel'>;
@@ -42,17 +44,8 @@ export function BookParcelScreen({ route, navigation }: Props) {
     setFieldErrors((prev) => (prev[field] ? { ...prev, [field]: undefined } : prev));
   };
 
-  const handleSubmit = useCallback(async () => {
-    // Guards against a double-tap firing two submissions before React re-renders the disabled button.
+  const performSubmit = useCallback(async () => {
     if (submittingRef.current) return;
-
-    const errors: FieldErrors = {
-      recipientId: validateRequiredUuid('Recipient ID', form.recipientId) ?? undefined,
-      busId: validateOptionalUuid('Bus ID', form.busId) ?? undefined,
-    };
-    setFieldErrors(errors);
-    setFormError(null);
-    if (Object.values(errors).some(Boolean)) return;
 
     // Route/pickup/dropoff come from the browsing flow (AvailableRoutesScreen ->
     // SelectHaltsScreen), never typed by hand. `fare` is intentionally omitted —
@@ -92,74 +85,119 @@ export function BookParcelScreen({ route, navigation }: Props) {
     }
   }, [form, parcelSize, routeId, pickupHaltId, dropoffHaltId, navigation]);
 
+  const handleSubmit = useCallback(() => {
+    // Guards against a double-tap firing two submissions before React re-renders the disabled button.
+    if (submittingRef.current) return;
+
+    const errors: FieldErrors = {
+      recipientId: validateRequiredUuid('Recipient ID', form.recipientId) ?? undefined,
+      busId: validateOptionalUuid('Bus ID', form.busId) ?? undefined,
+    };
+    setFieldErrors(errors);
+    setFormError(null);
+    if (Object.values(errors).some(Boolean)) return;
+
+    confirmAction('Confirm this booking?', 'This books the parcel on the selected route.', 'Confirm booking', performSubmit);
+  }, [form, performSubmit]);
+
   return (
-    <KeyboardAvoidingView style={styles.flex} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
-      <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
-        <Text style={styles.sectionTitle}>Booking review</Text>
+    <Screen>
+      <StepIndicator step={3} total={4} />
+
+      <Card title="Route">
         <InfoRow label="Route" value={routeRef ? `${routeRef} · ${routeName}` : routeName} />
         <InfoRow label="Pickup" value={pickupHaltName} />
         <InfoRow label="Dropoff" value={dropoffHaltName} />
-        <InfoRow label="Fare" value="Determined by the server after booking" />
+      </Card>
 
-        {formError ? <ErrorBanner message={formError} /> : null}
+      <View style={styles.fareCard}>
+        <View style={styles.fareIconWrap}>
+          <ICONS.fare size={18} color={colors.textSecondary} strokeWidth={2} />
+        </View>
+        <View style={styles.fareBody}>
+          <Text style={styles.fareLabel}>Fare</Text>
+          <Text style={styles.fareValue}>Determined by the server after booking</Text>
+        </View>
+      </View>
 
-        <Text style={styles.sectionTitle}>Consignment details</Text>
+      {formError ? <ErrorBanner message={formError} /> : null}
 
-        <TextField
-          label="Recipient ID *"
-          value={form.recipientId}
-          onChangeText={setField('recipientId')}
-          error={fieldErrors.recipientId}
-          placeholder="Recipient's account ID"
-          autoCapitalize="none"
-          autoCorrect={false}
-          editable={!submitting}
-        />
+      <TextField
+        testID="book-recipient-id-input"
+        label="Recipient ID *"
+        value={form.recipientId}
+        onChangeText={setField('recipientId')}
+        error={fieldErrors.recipientId}
+        placeholder="Recipient's account ID"
+        autoCapitalize="none"
+        autoCorrect={false}
+        editable={!submitting}
+      />
 
-        <TextField
-          label="Bus ID (optional)"
-          value={form.busId}
-          onChangeText={setField('busId')}
-          error={fieldErrors.busId}
-          placeholder="Leave blank if unknown"
-          autoCapitalize="none"
-          autoCorrect={false}
-          editable={!submitting}
-        />
+      <ParcelSizeSelector value={parcelSize} onChange={setParcelSize} />
 
-        <ParcelSizeSelector value={parcelSize} onChange={setParcelSize} />
+      <TextField
+        label="Description (optional)"
+        value={form.description}
+        onChangeText={setField('description')}
+        placeholder="What's in the parcel?"
+        multiline
+        numberOfLines={3}
+        editable={!submitting}
+      />
 
-        <TextField
-          label="Description (optional)"
-          value={form.description}
-          onChangeText={setField('description')}
-          placeholder="What's in the parcel?"
-          multiline
-          numberOfLines={3}
-          editable={!submitting}
-        />
+      <TextField
+        label="Bus ID (optional)"
+        value={form.busId}
+        onChangeText={setField('busId')}
+        error={fieldErrors.busId}
+        placeholder="Leave blank if unknown"
+        autoCapitalize="none"
+        autoCorrect={false}
+        editable={!submitting}
+      />
 
-        <Button label="Confirm booking" onPress={handleSubmit} loading={submitting} disabled={submitting} />
-      </ScrollView>
-    </KeyboardAvoidingView>
+      <Button
+        testID="confirm-booking-button"
+        label="Confirm booking"
+        onPress={handleSubmit}
+        loading={submitting}
+        disabled={submitting}
+      />
+    </Screen>
   );
 }
 
 const styles = StyleSheet.create({
-  flex: {
-    flex: 1,
+  fareCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
+    borderRadius: radius.md,
+    borderWidth: 1,
+    borderColor: colors.border,
+    backgroundColor: colors.surface,
+    padding: spacing.md,
+  },
+  fareIconWrap: {
+    width: 36,
+    height: 36,
+    borderRadius: radius.sm,
+    alignItems: 'center',
+    justifyContent: 'center',
     backgroundColor: colors.background,
   },
-  content: {
-    flexGrow: 1,
-    padding: spacing.lg,
-    gap: spacing.md,
+  fareBody: {
+    flex: 1,
+    gap: 2,
   },
-  sectionTitle: {
-    fontSize: 13,
-    fontWeight: '700',
+  fareLabel: {
+    fontSize: typography.label.fontSize,
+    fontWeight: typography.label.fontWeight,
+    color: colors.text,
+  },
+  fareValue: {
+    fontSize: typography.caption.fontSize,
     color: colors.textMuted,
-    textTransform: 'uppercase',
-    marginTop: spacing.sm,
   },
 });

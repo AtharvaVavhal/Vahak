@@ -1,12 +1,19 @@
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { StyleSheet, Text, View } from 'react-native';
 
-import { colors, spacing } from '../constants/theme';
+import { colors, spacing, typography } from '../constants/theme';
 import { REGISTERABLE_ROLES, type RegisterableRole } from '../types';
+import { Chip } from './Chip';
 
 const ROLE_LABELS: Record<RegisterableRole, string> = {
   SENDER: 'Sender',
   CONDUCTOR: 'Conductor',
   RECIPIENT: 'Recipient',
+};
+
+const ROLE_DESCRIPTIONS: Record<RegisterableRole, string> = {
+  SENDER: 'Book and track parcels you send.',
+  CONDUCTOR: 'Accept consignments and hand them over.',
+  RECIPIENT: 'Receive parcels and verify handover PINs.',
 };
 
 interface RoleSelectorProps {
@@ -20,21 +27,11 @@ export function RoleSelector({ value, onChange }: RoleSelectorProps) {
     <View style={styles.container}>
       <Text style={styles.label}>I am a</Text>
       <View style={styles.options}>
-        {REGISTERABLE_ROLES.map((role) => {
-          const selected = role === value;
-          return (
-            <Pressable
-              key={role}
-              onPress={() => onChange(role)}
-              style={[styles.option, selected && styles.optionSelected]}
-            >
-              <Text style={[styles.optionText, selected && styles.optionTextSelected]}>
-                {ROLE_LABELS[role]}
-              </Text>
-            </Pressable>
-          );
-        })}
+        {REGISTERABLE_ROLES.map((role) => (
+          <Chip key={role} label={ROLE_LABELS[role]} selected={role === value} onPress={() => onChange(role)} />
+        ))}
       </View>
+      <Text style={styles.description}>{ROLE_DESCRIPTIONS[value]}</Text>
     </View>
   );
 }
@@ -44,32 +41,18 @@ const styles = StyleSheet.create({
     gap: spacing.xs,
   },
   label: {
-    fontSize: 13,
-    fontWeight: '600',
+    fontSize: typography.label.fontSize,
+    lineHeight: typography.label.lineHeight,
+    fontWeight: typography.label.fontWeight,
     color: colors.text,
   },
   options: {
     flexDirection: 'row',
     gap: spacing.xs,
   },
-  option: {
-    flex: 1,
-    borderWidth: 1,
-    borderColor: colors.border,
-    borderRadius: 8,
-    paddingVertical: spacing.sm,
-    alignItems: 'center',
-  },
-  optionSelected: {
-    borderColor: colors.primary,
-    backgroundColor: '#EFF6FF',
-  },
-  optionText: {
-    fontSize: 13,
+  description: {
+    fontSize: typography.caption.fontSize,
+    lineHeight: typography.caption.lineHeight,
     color: colors.textMuted,
-    fontWeight: '600',
-  },
-  optionTextSelected: {
-    color: colors.primary,
   },
 });

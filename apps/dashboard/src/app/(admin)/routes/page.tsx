@@ -3,8 +3,9 @@
 import Link from 'next/link';
 import { useCallback, useEffect, useState } from 'react';
 
-import { Button, EmptyState, ErrorBanner, LoadingSpinner } from '../../../components/ui';
+import { Button, EmptyState, ErrorBanner, LoadingSpinner, useToast } from '../../../components/ui';
 import { RouteFormModal } from '../../../components/routes';
+import { ICONS } from '../../../constants/icons';
 import { adminApi } from '../../../services/api';
 import type { RouteWithRelations } from '../../../types';
 import { ApiError } from '../../../utils/ApiError';
@@ -19,6 +20,7 @@ export default function RoutesPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [creating, setCreating] = useState(false);
+  const { showToast } = useToast();
 
   const load = useCallback(async (targetPage: number) => {
     setLoading(true);
@@ -47,8 +49,8 @@ export default function RoutesPage() {
     <div className="flex flex-col gap-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-xl font-bold text-slate-900">Routes</h1>
-          <p className="text-sm text-slate-500">{total} route{total === 1 ? '' : 's'} total.</p>
+          <h1 className="text-xl font-bold text-ink-900">Routes</h1>
+          <p className="text-sm text-ink-500">{total} route{total === 1 ? '' : 's'} total.</p>
         </div>
         <Button label="+ New route" onClick={() => setCreating(true)} />
       </div>
@@ -63,14 +65,18 @@ export default function RoutesPage() {
       ) : null}
 
       {!loading && !error && routes && routes.length === 0 ? (
-        <EmptyState title="No routes yet" subtitle="Create one to start assigning halts and buses." />
+        <EmptyState
+          icon={ICONS.route}
+          title="No routes yet"
+          subtitle="Create one to start assigning halts and buses."
+        />
       ) : null}
 
       {!loading && !error && routes && routes.length > 0 ? (
         <>
-          <div className="overflow-x-auto rounded-lg border border-slate-200 bg-white">
+          <div className="overflow-x-auto rounded-md border border-ink-150 bg-surface">
             <table className="w-full min-w-[560px] text-left text-sm">
-              <thead className="border-b border-slate-200 bg-slate-50 text-xs uppercase tracking-wide text-slate-500">
+              <thead className="border-b border-ink-150 bg-canvas text-xs uppercase tracking-wide text-ink-500">
                 <tr>
                   <th className="px-4 py-3 font-medium">Name</th>
                   <th className="px-4 py-3 font-medium">Origin → Destination</th>
@@ -80,17 +86,17 @@ export default function RoutesPage() {
               </thead>
               <tbody>
                 {routes.map((route) => (
-                  <tr key={route.id} className="border-b border-slate-100 last:border-b-0 hover:bg-slate-50">
+                  <tr key={route.id} className="border-b border-ink-150 last:border-b-0 hover:bg-canvas">
                     <td className="px-4 py-3">
-                      <Link href={`/routes/${route.id}`} className="font-medium text-blue-700 hover:underline">
+                      <Link href={`/routes/${route.id}`} className="font-medium text-brand hover:underline">
                         {route.name}
                       </Link>
                     </td>
-                    <td className="px-4 py-3 text-slate-600">
+                    <td className="px-4 py-3 text-ink-700">
                       {route.origin} → {route.destination}
                     </td>
-                    <td className="px-4 py-3 text-slate-600">{route.halts.length}</td>
-                    <td className="px-4 py-3 text-slate-600">{route.buses.length}</td>
+                    <td className="px-4 py-3 text-ink-700">{route.halts.length}</td>
+                    <td className="px-4 py-3 text-ink-700">{route.buses.length}</td>
                   </tr>
                 ))}
               </tbody>
@@ -105,7 +111,7 @@ export default function RoutesPage() {
                 onClick={() => load(page - 1)}
                 disabled={page <= 1}
               />
-              <span className="text-sm text-slate-500">
+              <span className="text-sm text-ink-500">
                 Page {page} of {totalPages}
               </span>
               <Button
@@ -125,6 +131,7 @@ export default function RoutesPage() {
           onSaved={() => {
             setCreating(false);
             load(1);
+            showToast('Route created.');
           }}
         />
       ) : null}

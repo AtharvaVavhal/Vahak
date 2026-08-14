@@ -3,7 +3,6 @@ import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import {
   DeliveryConfirmationScreen,
   FindDeliveryScreen,
-  IncomingDeliveriesScreen,
   PinVerificationScreen,
   RecipientConsignmentDetailScreen,
   RecipientHomeScreen,
@@ -12,7 +11,6 @@ import type { Consignment } from '../types';
 
 export type RecipientStackParamList = {
   RecipientHome: undefined;
-  IncomingDeliveries: undefined;
   FindDelivery: undefined;
   RecipientConsignmentDetail: { consignmentId: string };
   PinVerification: { consignmentId: string };
@@ -25,11 +23,6 @@ export function RecipientNavigator() {
   return (
     <Stack.Navigator>
       <Stack.Screen name="RecipientHome" component={RecipientHomeScreen} options={{ title: 'Vahak' }} />
-      <Stack.Screen
-        name="IncomingDeliveries"
-        component={IncomingDeliveriesScreen}
-        options={{ title: 'Incoming deliveries' }}
-      />
       <Stack.Screen
         name="FindDelivery"
         component={FindDeliveryScreen}

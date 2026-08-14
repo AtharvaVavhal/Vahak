@@ -1,15 +1,14 @@
-import type { NativeStackScreenProps } from '@react-navigation/native-stack';
-import { useCallback, useRef, useState } from 'react';
-import { KeyboardAvoidingView, Platform, ScrollView, StyleSheet, Text } from 'react-native';
+import { useCallback, useLayoutEffect, useRef, useState } from 'react';
+import { StyleSheet, Text } from 'react-native';
 
-import { Button, ErrorBanner, TextField } from '../../components';
-import { colors, spacing } from '../../constants/theme';
+import { Button, ErrorBanner, HeaderLogoutButton, Screen, TextField } from '../../components';
+import { colors, typography } from '../../constants/theme';
 import { consignmentsApi } from '../../services/api';
-import type { ConductorStackParamList } from '../../navigation/ConductorNavigator';
+import type { ConductorTabScreenProps } from '../../navigation/ConductorNavigator';
 import { ApiError } from '../../utils/ApiError';
 import { validateRequiredUuid } from '../../utils/validation';
 
-type Props = NativeStackScreenProps<ConductorStackParamList, 'FindConsignment'>;
+type Props = ConductorTabScreenProps<'Find'>;
 
 export function FindConsignmentScreen({ navigation }: Props) {
   const [consignmentId, setConsignmentId] = useState('');
@@ -17,6 +16,10 @@ export function FindConsignmentScreen({ navigation }: Props) {
   const [formError, setFormError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const submittingRef = useRef(false);
+
+  useLayoutEffect(() => {
+    navigation.setOptions({ headerRight: () => <HeaderLogoutButton /> });
+  }, [navigation]);
 
   const handleLookup = useCallback(async () => {
     if (submittingRef.current) return;
@@ -42,47 +45,43 @@ export function FindConsignmentScreen({ navigation }: Props) {
   }, [consignmentId, navigation]);
 
   return (
-    <KeyboardAvoidingView style={styles.flex} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
-      <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
-        <Text style={styles.helperIntro}>
-          Already have a tracking ID? Look it up directly here — otherwise browse consignments
-          waiting to be accepted from the home screen.
-        </Text>
+    <Screen>
+      <Text style={styles.helperIntro}>
+        Already have a tracking ID? Look it up directly here — otherwise browse the queue tab
+        for consignments waiting to be accepted.
+      </Text>
 
-        {formError ? <ErrorBanner message={formError} /> : null}
+      {formError ? <ErrorBanner message={formError} /> : null}
 
-        <TextField
-          label="Consignment ID *"
-          value={consignmentId}
-          onChangeText={(text) => {
-            setConsignmentId(text);
-            if (fieldError) setFieldError(undefined);
-          }}
-          error={fieldError}
-          placeholder="Consignment ID"
-          autoCapitalize="none"
-          autoCorrect={false}
-          editable={!submitting}
-        />
+      <TextField
+        testID="find-consignment-id-input"
+        label="Consignment ID *"
+        value={consignmentId}
+        onChangeText={(text) => {
+          setConsignmentId(text);
+          if (fieldError) setFieldError(undefined);
+        }}
+        error={fieldError}
+        placeholder="Consignment ID"
+        autoCapitalize="none"
+        autoCorrect={false}
+        editable={!submitting}
+      />
 
-        <Button label="Look up" onPress={handleLookup} loading={submitting} disabled={submitting} />
-      </ScrollView>
-    </KeyboardAvoidingView>
+      <Button
+        testID="find-consignment-lookup-button"
+        label="Look up"
+        onPress={handleLookup}
+        loading={submitting}
+        disabled={submitting}
+      />
+    </Screen>
   );
 }
 
 const styles = StyleSheet.create({
-  flex: {
-    flex: 1,
-    backgroundColor: colors.background,
-  },
-  content: {
-    flexGrow: 1,
-    padding: spacing.lg,
-    gap: spacing.md,
-  },
   helperIntro: {
-    fontSize: 13,
+    fontSize: typography.size.sm,
     color: colors.textMuted,
   },
 });

@@ -65,13 +65,13 @@ export function BusFormModal({ routeId, initialBus, onClose, onSaved }: BusFormM
           disabled={submitting}
         />
         {isEditing ? (
-          <label className="flex items-center gap-2 text-sm font-medium text-slate-700">
+          <label className="flex items-center gap-2 text-sm font-medium text-ink-700">
             <input
               type="checkbox"
               checked={active}
               onChange={(e) => setActive(e.target.checked)}
               disabled={submitting}
-              className="h-4 w-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500"
+              className="h-4 w-4 rounded border-ink-300 text-brand focus:ring-brand"
             />
             Active
           </label>

@@ -1,9 +1,9 @@
 'use client';
 
-import Link from 'next/link';
 import { useCallback, useEffect, useState } from 'react';
 
-import { Button, ErrorBanner, LoadingSpinner } from '../../../components/ui';
+import { Button, Card, ErrorBanner, LoadingSpinner } from '../../../components/ui';
+import { ICONS } from '../../../constants/icons';
 import { adminApi } from '../../../services/api';
 import type { RouteWithRelations } from '../../../types';
 import { ApiError } from '../../../utils/ApiError';
@@ -19,7 +19,9 @@ interface Stats {
  * The backend has no aggregate dashboard endpoint (verified live: GET /dashboard/summary
  * and /api/v1/dashboard/summary both 404). These counts are honestly derived by paging
  * through the real GET /routes response (which nests halts/buses per route) and summing —
- * not a fabricated or mocked number.
+ * not a fabricated or mocked number. There is likewise no admin-wide consignment listing,
+ * so this page intentionally shows nothing about consignments — "Find Consignment" (by ID)
+ * is a separate sidebar tool, not folded in here as a fake metric.
  */
 async function computeStats(): Promise<Stats> {
   const firstPage = await adminApi.listRoutes(1, 100);
@@ -42,7 +44,7 @@ async function computeStats(): Promise<Stats> {
   return { routeCount: firstPage.meta.total, haltCount, busCount, activeBusCount };
 }
 
-export default function DashboardOverviewPage() {
+export default function NetworkPage() {
   const [stats, setStats] = useState<Stats | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -69,8 +71,8 @@ export default function DashboardOverviewPage() {
   return (
     <div className="flex flex-col gap-6">
       <div>
-        <h1 className="text-xl font-bold text-slate-900">Overview</h1>
-        <p className="text-sm text-slate-500">Operational snapshot from the routes network.</p>
+        <h1 className="text-xl font-bold text-ink-900">Network</h1>
+        <p className="text-sm text-ink-500">Operational snapshot from the routes network.</p>
       </div>
 
       {loading ? <LoadingSpinner label="Loading stats..." /> : null}
@@ -83,37 +85,65 @@ export default function DashboardOverviewPage() {
       ) : null}
 
       {stats && !loading ? (
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-          <StatCard label="Routes" value={stats.routeCount} />
-          <StatCard label="Halts" value={stats.haltCount} />
-          <StatCard label="Buses" value={stats.busCount} />
-          <StatCard label="Active buses" value={`${stats.activeBusCount} / ${stats.busCount}`} />
+        <div className="flex flex-col gap-4">
+          <ActiveBusRatioCard active={stats.activeBusCount} total={stats.busCount} />
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+            <StatCard icon={ICONS.route} label="Routes" value={stats.routeCount} />
+            <StatCard icon={ICONS.halt} label="Halts" value={stats.haltCount} />
+            <StatCard icon={ICONS.bus} label="Buses" value={stats.busCount} />
+          </div>
         </div>
       ) : null}
-
-      <div className="rounded-lg border border-dashed border-slate-300 bg-white p-5">
-        <p className="text-sm font-semibold text-slate-700">Consignment overview unavailable</p>
-        <p className="mt-1 text-sm text-slate-500">
-          The backend doesn&apos;t expose an admin-wide consignment listing or aggregate endpoint
-          (confirmed: no <code className="rounded bg-slate-100 px-1">GET /consignments</code> filter
-          works for an admin account, and there is no{' '}
-          <code className="rounded bg-slate-100 px-1">/dashboard/summary</code> route). This dashboard
-          won&apos;t show fabricated consignment counts as a result — look up a specific consignment
-          by ID instead.
-        </p>
-        <Link href="/consignments" className="mt-3 inline-block">
-          <Button label="Find a consignment" variant="secondary" />
-        </Link>
-      </div>
     </div>
   );
 }
 
-function StatCard({ label, value }: { label: string; value: string | number }) {
+function ActiveBusRatioCard({ active, total }: { active: number; total: number }) {
+  const pct = total === 0 ? 0 : Math.round((active / total) * 100);
+  const Icon = ICONS.bus;
   return (
-    <div className="rounded-lg border border-slate-200 bg-white p-5">
-      <p className="text-sm text-slate-500">{label}</p>
-      <p className="mt-1 text-2xl font-bold text-slate-900">{value}</p>
-    </div>
+    <Card>
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-3">
+          <div className="flex h-11 w-11 items-center justify-center rounded-sm bg-brand-tint text-brand">
+            <Icon size={22} strokeWidth={2} />
+          </div>
+          <div>
+            <p className="text-sm text-ink-500">Active buses</p>
+            <p className="text-2xl font-bold text-ink-900">
+              {active} / {total}
+            </p>
+          </div>
+        </div>
+        <p className="text-2xl font-bold text-brand">{pct}%</p>
+      </div>
+      <div className="mt-4 h-2 rounded-full bg-ink-150">
+        <div className="h-2 rounded-full bg-brand" style={{ width: `${pct}%` }} />
+      </div>
+    </Card>
+  );
+}
+
+function StatCard({
+  icon: Icon,
+  label,
+  value,
+}: {
+  icon: typeof ICONS.route;
+  label: string;
+  value: string | number;
+}) {
+  return (
+    <Card>
+      <div className="flex items-center gap-3">
+        <div className="flex h-9 w-9 items-center justify-center rounded-sm bg-canvas text-ink-500">
+          <Icon size={18} strokeWidth={2} />
+        </div>
+        <div>
+          <p className="text-sm text-ink-500">{label}</p>
+          <p className="text-xl font-bold text-ink-900">{value}</p>
+        </div>
+      </div>
+    </Card>
   );
 }

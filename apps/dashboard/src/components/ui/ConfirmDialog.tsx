@@ -37,7 +37,7 @@ export function ConfirmDialog({ title, description, confirmLabel = 'Delete', onC
 
   return (
     <Modal title={title} onClose={onClose}>
-      <p className="text-sm text-slate-600">{description}</p>
+      <p className="text-sm text-ink-700">{description}</p>
       {error ? (
         <div className="mt-3">
           <ErrorBanner message={error} />

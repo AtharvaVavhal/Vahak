@@ -1,18 +1,9 @@
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { useCallback, useEffect, useRef, useState } from 'react';
-import {
-  ActivityIndicator,
-  KeyboardAvoidingView,
-  Platform,
-  ScrollView,
-  StyleSheet,
-  Switch,
-  Text,
-  View,
-} from 'react-native';
+import { StyleSheet, Switch, Text, View } from 'react-native';
 
-import { Button, ErrorBanner, TextField } from '../../components';
-import { colors, spacing } from '../../constants/theme';
+import { Button, ErrorBanner, LoadingState, Screen, TextField } from '../../components';
+import { colors, spacing, typography } from '../../constants/theme';
 import { adminApi } from '../../services/api';
 import type { AdminStackParamList } from '../../navigation/AdminNavigator';
 import { ApiError } from '../../utils/ApiError';
@@ -28,6 +19,7 @@ export function BusFormScreen({ route, navigation }: Props) {
   const [active, setActive] = useState(true);
   const [loadingExisting, setLoadingExisting] = useState(isEditing);
   const [loadError, setLoadError] = useState<string | null>(null);
+  const [reloadToken, setReloadToken] = useState(0);
   const [fieldError, setFieldError] = useState<string | undefined>(undefined);
   const [formError, setFormError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
@@ -37,6 +29,8 @@ export function BusFormScreen({ route, navigation }: Props) {
     if (!busId) return;
     let cancelled = false;
     async function loadExisting() {
+      setLoadingExisting(true);
+      setLoadError(null);
       try {
         const existing = await adminApi.getBus(busId as string);
         if (!cancelled) {
@@ -55,7 +49,7 @@ export function BusFormScreen({ route, navigation }: Props) {
     return () => {
       cancelled = true;
     };
-  }, [busId]);
+  }, [busId, reloadToken]);
 
   const handleSubmit = useCallback(async () => {
     if (submittingRef.current) return;
@@ -83,71 +77,58 @@ export function BusFormScreen({ route, navigation }: Props) {
   }, [registration, active, routeId, busId, navigation]);
 
   if (loadingExisting) {
-    return (
-      <View style={styles.centered}>
-        <ActivityIndicator color={colors.primary} />
-      </View>
-    );
+    return <LoadingState />;
   }
 
   if (loadError) {
     return (
       <View style={styles.centered}>
         <ErrorBanner message={loadError} />
+        <Button label="Retry" onPress={() => setReloadToken((t) => t + 1)} variant="secondary" />
       </View>
     );
   }
 
   return (
-    <KeyboardAvoidingView style={styles.flex} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
-      <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
-        {formError ? <ErrorBanner message={formError} /> : null}
+    <Screen>
+      {formError ? <ErrorBanner message={formError} /> : null}
 
-        <TextField
-          label="Registration *"
-          value={registration}
-          onChangeText={(text) => {
-            setRegistration(text);
-            if (fieldError) setFieldError(undefined);
-          }}
-          error={fieldError}
-          placeholder="e.g. MH-12-AB-1234"
-          autoCapitalize="characters"
-          autoCorrect={false}
-          editable={!submitting}
-        />
+      <TextField
+        label="Registration *"
+        value={registration}
+        onChangeText={(text) => {
+          setRegistration(text);
+          if (fieldError) setFieldError(undefined);
+        }}
+        error={fieldError}
+        placeholder="e.g. MH-12-AB-1234"
+        autoCapitalize="characters"
+        autoCorrect={false}
+        editable={!submitting}
+      />
 
-        {isEditing ? (
-          <View style={styles.switchRow}>
-            <Text style={styles.switchLabel}>Active</Text>
-            <Switch value={active} onValueChange={setActive} disabled={submitting} />
-          </View>
-        ) : null}
+      {isEditing ? (
+        <View style={styles.switchRow}>
+          <Text style={styles.switchLabel}>Active</Text>
+          <Switch value={active} onValueChange={setActive} disabled={submitting} />
+        </View>
+      ) : null}
 
-        <Button
-          label={isEditing ? 'Save changes' : 'Add bus'}
-          onPress={handleSubmit}
-          loading={submitting}
-          disabled={submitting}
-        />
-      </ScrollView>
-    </KeyboardAvoidingView>
+      <Button
+        label={isEditing ? 'Save changes' : 'Add bus'}
+        onPress={handleSubmit}
+        loading={submitting}
+        disabled={submitting}
+      />
+    </Screen>
   );
 }
 
 const styles = StyleSheet.create({
-  flex: {
-    flex: 1,
-    backgroundColor: colors.background,
-  },
   centered: {
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
-    padding: spacing.lg,
-  },
-  content: {
-    flexGrow: 1,
     padding: spacing.lg,
     gap: spacing.md,
   },
@@ -157,8 +138,8 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   switchLabel: {
-    fontSize: 13,
-    fontWeight: '600',
+    fontSize: typography.size.sm,
+    fontWeight: typography.weight.medium,
     color: colors.text,
   },
 });

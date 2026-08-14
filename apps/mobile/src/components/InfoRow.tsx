@@ -1,6 +1,6 @@
 import { StyleSheet, Text, View } from 'react-native';
 
-import { colors, spacing } from '../constants/theme';
+import { colors, spacing, typography } from '../constants/theme';
 
 export function InfoRow({ label, value }: { label: string; value: string }) {
   return (
@@ -19,13 +19,13 @@ const styles = StyleSheet.create({
     paddingVertical: spacing.xs,
   },
   label: {
-    fontSize: 13,
+    fontSize: typography.size.sm,
     color: colors.textMuted,
   },
   value: {
-    fontSize: 13,
+    fontSize: typography.size.sm,
     color: colors.text,
-    fontWeight: '600',
+    fontWeight: typography.weight.medium,
     flexShrink: 1,
     textAlign: 'right',
   },

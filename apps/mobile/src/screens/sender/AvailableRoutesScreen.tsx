@@ -1,10 +1,11 @@
 import { useFocusEffect } from '@react-navigation/native';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { useCallback, useState } from 'react';
-import { ActivityIndicator, FlatList, Pressable, RefreshControl, StyleSheet, Text, View } from 'react-native';
+import { FlatList, Pressable, RefreshControl, StyleSheet, Text, View } from 'react-native';
 
-import { Button, ErrorBanner } from '../../components';
-import { colors, spacing } from '../../constants/theme';
+import { Button, Card, EmptyState, ErrorBanner, LoadingState } from '../../components';
+import { ICONS } from '../../constants/icons';
+import { colors, radius, spacing, typography } from '../../constants/theme';
 import { senderRoutesApi } from '../../services/api';
 import type { SenderStackParamList } from '../../navigation/SenderNavigator';
 import type { AvailableRoute } from '../../types';
@@ -43,18 +44,14 @@ export function AvailableRoutesScreen({ navigation }: Props) {
   );
 
   if (loading) {
-    return (
-      <View style={styles.centered}>
-        <ActivityIndicator color={colors.primary} />
-      </View>
-    );
+    return <LoadingState />;
   }
 
   if (error && !routes) {
     return (
       <View style={styles.centered}>
         <ErrorBanner message={error} />
-        <Button label="Retry" onPress={() => load(false)} />
+        <Button label="Retry" onPress={() => load(false)} variant="secondary" />
       </View>
     );
   }
@@ -71,14 +68,14 @@ export function AvailableRoutesScreen({ navigation }: Props) {
         contentContainerStyle={styles.list}
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => load(true)} />}
         ListEmptyComponent={
-          <View style={styles.centered}>
-            <Text style={styles.emptyTitle}>No routes available</Text>
-            <Text style={styles.emptySubtitle}>Check back later or pull to refresh.</Text>
-          </View>
+          <EmptyState
+            icon={ICONS.route}
+            title="No routes available"
+            subtitle="Check back later or pull to refresh."
+          />
         }
         renderItem={({ item }) => (
           <Pressable
-            style={styles.card}
             onPress={() =>
               navigation.navigate('SelectHalts', {
                 routeId: item.id,
@@ -87,11 +84,18 @@ export function AvailableRoutesScreen({ navigation }: Props) {
               })
             }
           >
-            {item.routeRef ? <Text style={styles.routeRef}>Route {item.routeRef}</Text> : null}
-            <Text style={styles.cardTitle}>{item.name}</Text>
-            <Text style={styles.cardSubtitle}>
-              {item.origin} → {item.destination}
-            </Text>
+            <Card style={styles.card}>
+              <View style={styles.iconWrap}>
+                <ICONS.route size={18} color={colors.primary} strokeWidth={2} />
+              </View>
+              <View style={styles.cardBody}>
+                {item.routeRef ? <Text style={styles.routeRef}>Route {item.routeRef}</Text> : null}
+                <Text style={styles.cardTitle}>{item.name}</Text>
+                <Text style={styles.cardSubtitle}>
+                  {item.origin} → {item.destination}
+                </Text>
+              </View>
+            </Card>
           </Pressable>
         )}
       />
@@ -118,7 +122,7 @@ const styles = StyleSheet.create({
     gap: spacing.md,
   },
   helperIntro: {
-    fontSize: 13,
+    fontSize: typography.size.sm,
     color: colors.textMuted,
     paddingHorizontal: spacing.lg,
     paddingTop: spacing.md,
@@ -129,35 +133,34 @@ const styles = StyleSheet.create({
     flexGrow: 1,
   },
   card: {
-    borderWidth: 1,
-    borderColor: colors.border,
-    borderRadius: 12,
-    padding: spacing.md,
-    backgroundColor: colors.surface,
-    gap: spacing.xs,
-    marginBottom: spacing.md,
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: spacing.sm,
+  },
+  iconWrap: {
+    width: 36,
+    height: 36,
+    borderRadius: radius.sm,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: colors.primaryTint,
+  },
+  cardBody: {
+    flex: 1,
+    gap: 2,
   },
   routeRef: {
-    fontSize: 12,
-    fontWeight: '700',
+    fontSize: typography.size.xs,
+    fontWeight: typography.weight.bold,
     color: colors.primary,
   },
   cardTitle: {
-    fontSize: 15,
-    fontWeight: '700',
+    fontSize: typography.size.md,
+    fontWeight: typography.weight.bold,
     color: colors.text,
   },
   cardSubtitle: {
-    fontSize: 13,
-    color: colors.textMuted,
-  },
-  emptyTitle: {
-    fontSize: 17,
-    fontWeight: '700',
-    color: colors.text,
-  },
-  emptySubtitle: {
-    fontSize: 13,
+    fontSize: typography.size.sm,
     color: colors.textMuted,
   },
   footer: {

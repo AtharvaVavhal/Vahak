@@ -1,7 +1,7 @@
 import { useState } from 'react';
-import { Pressable, Text } from 'react-native';
+import { Pressable, StyleSheet, Text } from 'react-native';
 
-import { colors } from '../constants/theme';
+import { colors, typography } from '../constants/theme';
 import { TextField } from './TextField';
 import type { TextInputProps } from 'react-native';
 
@@ -22,12 +22,18 @@ export function PasswordField({ label, error, ...inputProps }: PasswordFieldProp
       autoCorrect={false}
       rightAccessory={
         <Pressable onPress={() => setVisible((current) => !current)} hitSlop={8}>
-          <Text style={{ color: colors.primary, fontWeight: '600', fontSize: 13 }}>
-            {visible ? 'Hide' : 'Show'}
-          </Text>
+          <Text style={styles.toggle}>{visible ? 'Hide' : 'Show'}</Text>
         </Pressable>
       }
       {...inputProps}
     />
   );
 }
+
+const styles = StyleSheet.create({
+  toggle: {
+    color: colors.primary,
+    fontWeight: typography.weight.medium,
+    fontSize: typography.size.sm,
+  },
+});

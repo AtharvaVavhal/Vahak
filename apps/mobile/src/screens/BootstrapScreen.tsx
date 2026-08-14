@@ -1,14 +1,15 @@
-import { ActivityIndicator, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, StyleSheet, Text } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { colors, spacing } from '../constants/theme';
+import { colors, spacing, typography } from '../constants/theme';
 
 /** Shown while AuthProvider restores a session (GET /auth/me) from the stored JWT. */
 export function BootstrapScreen() {
   return (
-    <View style={styles.container}>
+    <SafeAreaView style={styles.container} edges={['top', 'bottom']}>
       <Text style={styles.title}>Vahak</Text>
       <ActivityIndicator color={colors.primary} />
-    </View>
+    </SafeAreaView>
   );
 }
 
@@ -21,8 +22,8 @@ const styles = StyleSheet.create({
     gap: spacing.lg,
   },
   title: {
-    fontSize: 28,
-    fontWeight: '700',
+    fontSize: typography.size.xxl,
+    fontWeight: typography.weight.bold,
     color: colors.text,
   },
 });

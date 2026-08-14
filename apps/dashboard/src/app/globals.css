@@ -1,1 +1,36 @@
 @import "tailwindcss";
+
+/*
+ * Vahak design tokens — shared vocabulary with the mobile app's theme.ts.
+ * `--radius-sm/md/lg` override Tailwind's built-in `rounded-sm/md/lg` scale directly,
+ * so every existing `rounded-md`/`rounded-lg` usage picks up the new values automatically.
+ */
+@theme {
+  --color-brand: #1e3a8a;
+  --color-brand-hover: #152b66;
+  --color-brand-tint: #eaf0fd;
+
+  --color-ink-900: #0b1220;
+  --color-ink-700: #33415c;
+  --color-ink-500: #64748b;
+  --color-ink-300: #cbd5e1;
+  --color-ink-150: #e7eaf0;
+
+  --color-canvas: #f4f6fa;
+  --color-surface: #ffffff;
+
+  --color-success: #15803d;
+  --color-success-tint: #dcfce7;
+  --color-warning: #b45309;
+  --color-warning-tint: #fef3c7;
+  --color-danger: #dc2626;
+  --color-danger-tint: #fef2f2;
+  --color-verify: #6d28d9;
+  --color-verify-tint: #ede4fb;
+
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-lg: 20px;
+
+  --shadow-overlay: 0 8px 24px rgba(11, 18, 32, 0.14);
+}

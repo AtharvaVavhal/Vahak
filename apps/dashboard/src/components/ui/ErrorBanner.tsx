@@ -1,7 +1,10 @@
+import { CircleAlert } from 'lucide-react';
+
 export function ErrorBanner({ message }: { message: string }) {
   return (
-    <div className="rounded-md border border-red-300 bg-red-50 px-3 py-2 text-sm text-red-700">
-      {message}
+    <div className="flex items-start gap-2 rounded-sm border border-danger bg-danger-tint px-3 py-2 text-sm text-danger">
+      <CircleAlert size={16} strokeWidth={2} className="mt-0.5 shrink-0" />
+      <span>{message}</span>
     </div>
   );
 }

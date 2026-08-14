@@ -4,7 +4,7 @@ import { createContext, useCallback, useEffect, useMemo, useState, type ReactNod
 
 import { authApi } from '../services/api';
 import { onSessionExpired } from './sessionEvents';
-import { clearStoredAccessToken, getStoredAccessToken, setStoredAccessToken } from './tokenStorage';
+import { clearStoredAccessToken, getStoredAccessToken, markSessionExpired, setStoredAccessToken } from './tokenStorage';
 import type { LoginRequest, User } from '../types';
 
 interface AuthContextValue {
@@ -58,7 +58,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setUser(null);
   }, []);
 
-  useEffect(() => onSessionExpired(logout), [logout]);
+  const handleSessionExpired = useCallback(() => {
+    markSessionExpired();
+    logout();
+  }, [logout]);
+
+  useEffect(() => onSessionExpired(handleSessionExpired), [handleSessionExpired]);
 
   const value = useMemo<AuthContextValue>(
     () => ({

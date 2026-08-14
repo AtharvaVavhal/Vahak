@@ -1,9 +1,9 @@
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { ActivityIndicator, KeyboardAvoidingView, Platform, ScrollView, StyleSheet, View } from 'react-native';
+import { View } from 'react-native';
 
-import { Button, ErrorBanner, TextField } from '../../components';
-import { colors, spacing } from '../../constants/theme';
+import { Button, ErrorBanner, LoadingState, Screen, TextField } from '../../components';
+import { spacing } from '../../constants/theme';
 import { adminApi } from '../../services/api';
 import type { AdminStackParamList } from '../../navigation/AdminNavigator';
 import type { CreateHaltRequest } from '../../types';
@@ -30,6 +30,7 @@ export function HaltFormScreen({ route, navigation }: Props) {
   const [form, setForm] = useState<FormState>(initialForm);
   const [loadingExisting, setLoadingExisting] = useState(isEditing);
   const [loadError, setLoadError] = useState<string | null>(null);
+  const [reloadToken, setReloadToken] = useState(0);
   const [fieldErrors, setFieldErrors] = useState<FieldErrors>({});
   const [formError, setFormError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
@@ -39,6 +40,8 @@ export function HaltFormScreen({ route, navigation }: Props) {
     if (!haltId) return;
     let cancelled = false;
     async function loadExisting() {
+      setLoadingExisting(true);
+      setLoadError(null);
       try {
         const existing = await adminApi.getHalt(haltId as string);
         if (!cancelled) {
@@ -61,7 +64,7 @@ export function HaltFormScreen({ route, navigation }: Props) {
     return () => {
       cancelled = true;
     };
-  }, [haltId]);
+  }, [haltId, reloadToken]);
 
   const setField = (field: keyof FormState) => (text: string) => {
     setForm((prev) => ({ ...prev, [field]: text }));
@@ -106,90 +109,67 @@ export function HaltFormScreen({ route, navigation }: Props) {
   }, [form, routeId, haltId, navigation]);
 
   if (loadingExisting) {
-    return (
-      <View style={styles.centered}>
-        <ActivityIndicator color={colors.primary} />
-      </View>
-    );
+    return <LoadingState />;
   }
 
   if (loadError) {
     return (
-      <View style={styles.centered}>
+      <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', padding: spacing.lg, gap: spacing.md }}>
         <ErrorBanner message={loadError} />
+        <Button label="Retry" onPress={() => setReloadToken((t) => t + 1)} variant="secondary" />
       </View>
     );
   }
 
   return (
-    <KeyboardAvoidingView style={styles.flex} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
-      <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
-        {formError ? <ErrorBanner message={formError} /> : null}
+    <Screen>
+      {formError ? <ErrorBanner message={formError} /> : null}
 
-        <TextField
-          label="Name *"
-          value={form.name}
-          onChangeText={setField('name')}
-          error={fieldErrors.name}
-          placeholder="e.g. Pune Station"
-          editable={!submitting}
-        />
+      <TextField
+        label="Name *"
+        value={form.name}
+        onChangeText={setField('name')}
+        error={fieldErrors.name}
+        placeholder="e.g. Pune Station"
+        editable={!submitting}
+      />
 
-        <TextField
-          label="Sequence *"
-          value={form.sequence}
-          onChangeText={setField('sequence')}
-          error={fieldErrors.sequence}
-          placeholder="Position along the route, starting at 1"
-          keyboardType="number-pad"
-          editable={!submitting}
-        />
+      <TextField
+        label="Sequence *"
+        value={form.sequence}
+        onChangeText={setField('sequence')}
+        error={fieldErrors.sequence}
+        placeholder="Position along the route, starting at 1"
+        keyboardType="number-pad"
+        editable={!submitting}
+      />
 
-        <TextField
-          label="Latitude (optional)"
-          value={form.latitude}
-          onChangeText={setField('latitude')}
-          error={fieldErrors.latitude}
-          placeholder="e.g. 18.52"
-          keyboardType="numbers-and-punctuation"
-          editable={!submitting}
-        />
+      <TextField
+        label="Latitude (optional)"
+        value={form.latitude}
+        onChangeText={setField('latitude')}
+        error={fieldErrors.latitude}
+        placeholder="e.g. 18.52"
+        keyboardType="numbers-and-punctuation"
+        editable={!submitting}
+      />
 
-        <TextField
-          label="Longitude (optional)"
-          value={form.longitude}
-          onChangeText={setField('longitude')}
-          error={fieldErrors.longitude}
-          placeholder="e.g. 73.85"
-          keyboardType="numbers-and-punctuation"
-          editable={!submitting}
-        />
+      <TextField
+        label="Longitude (optional)"
+        value={form.longitude}
+        onChangeText={setField('longitude')}
+        error={fieldErrors.longitude}
+        placeholder="e.g. 73.85"
+        keyboardType="numbers-and-punctuation"
+        editable={!submitting}
+      />
 
-        <Button
-          label={isEditing ? 'Save changes' : 'Add halt'}
-          onPress={handleSubmit}
-          loading={submitting}
-          disabled={submitting}
-        />
-      </ScrollView>
-    </KeyboardAvoidingView>
+      <Button
+        label={isEditing ? 'Save changes' : 'Add halt'}
+        onPress={handleSubmit}
+        loading={submitting}
+        disabled={submitting}
+      />
+    </Screen>
   );
 }
-
-const styles = StyleSheet.create({
-  flex: {
-    flex: 1,
-    backgroundColor: colors.background,
-  },
-  centered: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-    padding: spacing.lg,
-  },
-  content: {
-    flexGrow: 1,
-    padding: spacing.lg,
-    gap: spacing.md,
-  },
-});

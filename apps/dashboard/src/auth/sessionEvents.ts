@@ -15,3 +15,4 @@ export function onSessionExpired(listener: Listener): () => void {
 export function emitSessionExpired(): void {
   listeners.forEach((listener) => listener());
 }
+

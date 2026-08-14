@@ -1,10 +1,11 @@
 'use client';
 
 import { useRouter } from 'next/navigation';
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import type { ReactNode } from 'react';
 
 import { Header } from './Header';
+import { MobileNavDrawer } from './MobileNavDrawer';
 import { Sidebar } from './Sidebar';
 import { Button, LoadingSpinner } from '../ui';
 import { useAuth } from '../../hooks';
@@ -19,6 +20,7 @@ import { UserRole } from '../../types';
 export function DashboardShell({ children }: { children: ReactNode }) {
   const { user, isAuthenticated, isBootstrapping, logout } = useAuth();
   const router = useRouter();
+  const [navOpen, setNavOpen] = useState(false);
 
   useEffect(() => {
     if (!isBootstrapping && !isAuthenticated) {
@@ -28,7 +30,7 @@ export function DashboardShell({ children }: { children: ReactNode }) {
 
   if (isBootstrapping) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-slate-50">
+      <div className="flex min-h-screen items-center justify-center bg-canvas">
         <LoadingSpinner label="Restoring session..." />
       </div>
     );
@@ -40,9 +42,9 @@ export function DashboardShell({ children }: { children: ReactNode }) {
 
   if (user?.role !== UserRole.ADMIN) {
     return (
-      <div className="flex min-h-screen flex-col items-center justify-center gap-4 bg-slate-50 px-4 text-center">
-        <p className="text-lg font-semibold text-slate-900">This dashboard is for admin accounts only</p>
-        <p className="max-w-md text-sm text-slate-500">
+      <div className="flex min-h-screen flex-col items-center justify-center gap-4 bg-canvas px-4 text-center">
+        <p className="text-lg font-semibold text-ink-900">This dashboard is for admin accounts only</p>
+        <p className="max-w-md text-sm text-ink-500">
           You&apos;re signed in as a {user?.role.toLowerCase()}. Log out and sign in with an admin
           account to continue.
         </p>
@@ -58,10 +60,11 @@ export function DashboardShell({ children }: { children: ReactNode }) {
   }
 
   return (
-    <div className="flex min-h-screen bg-slate-50">
+    <div className="flex min-h-screen bg-canvas">
       <Sidebar />
+      <MobileNavDrawer open={navOpen} onClose={() => setNavOpen(false)} />
       <div className="flex min-w-0 flex-1 flex-col">
-        <Header />
+        <Header onMenuPress={() => setNavOpen(true)} />
         <main className="flex-1 overflow-y-auto p-4 md:p-6">{children}</main>
       </div>
     </div>

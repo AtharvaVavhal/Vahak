@@ -1,25 +1,18 @@
 import { useFocusEffect } from '@react-navigation/native';
-import type { NativeStackScreenProps } from '@react-navigation/native-stack';
-import { useCallback, useState } from 'react';
-import {
-  ActivityIndicator,
-  Pressable,
-  RefreshControl,
-  SectionList,
-  StyleSheet,
-  Text,
-  View,
-} from 'react-native';
+import { useCallback, useLayoutEffect, useState } from 'react';
+import { Pressable, RefreshControl, SectionList, StyleSheet, Text, View } from 'react-native';
 
-import { Button, ErrorBanner, StatusBadge } from '../../components';
-import { colors, spacing } from '../../constants/theme';
+import { Button, Card, EmptyState, ErrorBanner, HeaderLogoutButton, LoadingState, StatusBadge } from '../../components';
+import { ICONS } from '../../constants/icons';
+import { colors, spacing, typography } from '../../constants/theme';
+import { useAuth } from '../../hooks';
 import { consignmentsApi } from '../../services/api';
-import type { ConductorStackParamList } from '../../navigation/ConductorNavigator';
+import type { ConductorTabScreenProps } from '../../navigation/ConductorNavigator';
 import { ConsignmentStatus, type ConsignmentDetail } from '../../types';
 import { ApiError } from '../../utils/ApiError';
 import { formatFare } from '../../utils/format';
 
-type Props = NativeStackScreenProps<ConductorStackParamList, 'AvailableConsignments'>;
+type Props = ConductorTabScreenProps<'Queue'>;
 
 interface Section {
   title: string;
@@ -29,25 +22,31 @@ interface Section {
 /**
  * GET /consignments/conductor returns everything a conductor is authorized to
  * see (findById's own CONDUCTOR predicate, as a list) in one query — grouped
- * here client-side into "available to accept" (BOOKED, unclaimed) vs. "my
- * deliveries" (already accepted by this conductor, any later status). The
+ * here client-side into "needs a decision" (BOOKED, unclaimed) vs. "yours, in
+ * progress" (already accepted by this conductor, any later status). The
  * grouping is presentational only; the authorization boundary is the
  * backend's, not re-derived here.
  */
 function toSections(consignments: ConsignmentDetail[]): Section[] {
-  const available = consignments.filter((c) => c.status === ConsignmentStatus.BOOKED);
-  const mine = consignments.filter((c) => c.status !== ConsignmentStatus.BOOKED);
+  const needsDecision = consignments.filter((c) => c.status === ConsignmentStatus.BOOKED);
+  const inProgress = consignments.filter((c) => c.status !== ConsignmentStatus.BOOKED);
   const sections: Section[] = [];
-  if (available.length > 0) sections.push({ title: 'Available to accept', data: available });
-  if (mine.length > 0) sections.push({ title: 'My deliveries', data: mine });
+  // Time-sensitive section first, when populated.
+  if (needsDecision.length > 0) sections.push({ title: 'Needs a decision', data: needsDecision });
+  if (inProgress.length > 0) sections.push({ title: 'Yours, in progress', data: inProgress });
   return sections;
 }
 
 export function AvailableConsignmentsScreen({ navigation }: Props) {
+  const { user } = useAuth();
   const [consignments, setConsignments] = useState<ConsignmentDetail[] | null>(null);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  useLayoutEffect(() => {
+    navigation.setOptions({ headerRight: () => <HeaderLogoutButton /> });
+  }, [navigation]);
 
   const load = useCallback(async (isRefresh: boolean) => {
     if (isRefresh) setRefreshing(true);
@@ -73,18 +72,14 @@ export function AvailableConsignmentsScreen({ navigation }: Props) {
   );
 
   if (loading) {
-    return (
-      <View style={styles.centered}>
-        <ActivityIndicator color={colors.primary} />
-      </View>
-    );
+    return <LoadingState />;
   }
 
   if (error && !consignments) {
     return (
       <View style={styles.centered}>
         <ErrorBanner message={error} />
-        <Button label="Retry" onPress={() => load(false)} />
+        <Button label="Retry" onPress={() => load(false)} variant="secondary" />
       </View>
     );
   }
@@ -100,32 +95,32 @@ export function AvailableConsignmentsScreen({ navigation }: Props) {
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => load(true)} />}
         stickySectionHeadersEnabled={false}
         ListEmptyComponent={
-          <View style={styles.centered}>
-            <Text style={styles.emptyTitle}>Nothing right now</Text>
-            <Text style={styles.emptySubtitle}>
-              Booked consignments waiting to be accepted will show up here.
-            </Text>
-          </View>
+          <EmptyState
+            icon={ICONS.conductorQueue}
+            title="Nothing right now"
+            subtitle="Booked consignments waiting to be accepted will show up here."
+          />
         }
         renderSectionHeader={({ section }) => (
           <Text style={styles.sectionHeader}>{section.title}</Text>
         )}
         renderItem={({ item }) => (
           <Pressable
-            style={styles.card}
             onPress={() =>
               navigation.navigate('ConductorConsignmentDetail', { consignmentId: item.id })
             }
           >
-            <View style={styles.cardTop}>
-              <Text style={styles.trackingCode}>{item.trackingCode}</Text>
-              <StatusBadge status={item.status} />
-            </View>
-            <Text style={styles.routeName}>{item.route.name}</Text>
-            <Text style={styles.haltLine}>
-              {item.pickupHalt.name} → {item.dropoffHalt.name}
-            </Text>
-            <Text style={styles.fare}>{formatFare(item.fare)}</Text>
+            <Card style={styles.card}>
+              <View style={styles.cardTop}>
+                <Text style={[styles.trackingCode, styles.mono]}>{item.trackingCode}</Text>
+                <StatusBadge status={item.status} viewerRole={user?.role} />
+              </View>
+              <Text style={styles.routeName}>{item.route.name}</Text>
+              <Text style={styles.haltLine}>
+                {item.pickupHalt.name} → {item.dropoffHalt.name}
+              </Text>
+              <Text style={styles.fare}>{formatFare(item.fare)}</Text>
+            </Card>
           </Pressable>
         )}
       />
@@ -156,20 +151,14 @@ const styles = StyleSheet.create({
     flexGrow: 1,
   },
   sectionHeader: {
-    fontSize: 13,
-    fontWeight: '700',
+    fontSize: typography.size.sm,
+    fontWeight: typography.weight.bold,
     color: colors.textMuted,
     textTransform: 'uppercase',
     marginTop: spacing.md,
     marginBottom: spacing.sm,
   },
   card: {
-    borderWidth: 1,
-    borderColor: colors.border,
-    borderRadius: 12,
-    padding: spacing.md,
-    backgroundColor: colors.surface,
-    gap: spacing.xs,
     marginBottom: spacing.md,
   },
   cardTop: {
@@ -178,32 +167,25 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
   },
   trackingCode: {
-    fontSize: 13,
-    fontWeight: '700',
+    fontSize: typography.size.sm,
+    fontWeight: typography.weight.bold,
     color: colors.text,
   },
+  mono: {
+    fontFamily: typography.monoFontFamily,
+  },
   routeName: {
-    fontSize: 14,
-    fontWeight: '600',
+    fontSize: typography.size.md - 1,
+    fontWeight: typography.weight.medium,
     color: colors.text,
   },
   haltLine: {
-    fontSize: 13,
+    fontSize: typography.size.sm,
     color: colors.textMuted,
   },
   fare: {
-    fontSize: 13,
+    fontSize: typography.size.sm,
     color: colors.textMuted,
-  },
-  emptyTitle: {
-    fontSize: 17,
-    fontWeight: '700',
-    color: colors.text,
-  },
-  emptySubtitle: {
-    fontSize: 13,
-    color: colors.textMuted,
-    textAlign: 'center',
   },
   footer: {
     padding: spacing.lg,

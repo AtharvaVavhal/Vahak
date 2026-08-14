@@ -1,10 +1,11 @@
 import { useFocusEffect } from '@react-navigation/native';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { useCallback, useState } from 'react';
-import { ActivityIndicator, FlatList, Pressable, StyleSheet, Text, View } from 'react-native';
+import { FlatList, StyleSheet, Text, View } from 'react-native';
 
-import { Button, ErrorBanner } from '../../components';
-import { colors, spacing } from '../../constants/theme';
+import { Button, Chip, EmptyState, ErrorBanner, LoadingState, StepIndicator } from '../../components';
+import { ICONS } from '../../constants/icons';
+import { colors, radius, spacing, typography } from '../../constants/theme';
 import { senderRoutesApi } from '../../services/api';
 import type { SenderStackParamList } from '../../navigation/SenderNavigator';
 import type { AvailableHalt } from '../../types';
@@ -62,18 +63,14 @@ export function SelectHaltsScreen({ route, navigation }: Props) {
   };
 
   if (loading) {
-    return (
-      <View style={styles.centered}>
-        <ActivityIndicator color={colors.primary} />
-      </View>
-    );
+    return <LoadingState />;
   }
 
   if (error && !halts) {
     return (
       <View style={styles.centered}>
         <ErrorBanner message={error} />
-        <Button label="Retry" onPress={() => load()} />
+        <Button label="Retry" onPress={() => load()} variant="secondary" />
       </View>
     );
   }
@@ -81,6 +78,7 @@ export function SelectHaltsScreen({ route, navigation }: Props) {
   return (
     <View style={styles.flex}>
       <View style={styles.header}>
+        <StepIndicator step={2} total={4} />
         {routeRef ? <Text style={styles.routeRef}>Route {routeRef}</Text> : null}
         <Text style={styles.routeName}>{routeName}</Text>
         <Text style={styles.helperIntro}>Tap to set this stop as your pickup or dropoff.</Text>
@@ -90,33 +88,20 @@ export function SelectHaltsScreen({ route, navigation }: Props) {
         data={halts ?? []}
         keyExtractor={(item) => item.id}
         contentContainerStyle={styles.list}
-        ListEmptyComponent={
-          <View style={styles.centered}>
-            <Text style={styles.emptyTitle}>No stops on this route</Text>
-          </View>
-        }
+        ListEmptyComponent={<EmptyState icon={ICONS.halt} title="No stops on this route" />}
         renderItem={({ item }) => {
           const isPickup = item.id === pickupHaltId;
           const isDropoff = item.id === dropoffHaltId;
           return (
             <View style={styles.row}>
               <View style={styles.rowInfo}>
+                <ICONS.halt size={16} color={colors.textMuted} strokeWidth={2} />
                 <Text style={styles.sequence}>{item.sequence}</Text>
                 <Text style={styles.haltName}>{item.name}</Text>
               </View>
               <View style={styles.chipGroup}>
-                <Pressable
-                  style={[styles.chip, isPickup && styles.chipPickupActive]}
-                  onPress={() => setPickupHaltId(item.id)}
-                >
-                  <Text style={[styles.chipLabel, isPickup && styles.chipLabelActive]}>Pickup</Text>
-                </Pressable>
-                <Pressable
-                  style={[styles.chip, isDropoff && styles.chipDropoffActive]}
-                  onPress={() => setDropoffHaltId(item.id)}
-                >
-                  <Text style={[styles.chipLabel, isDropoff && styles.chipLabelActive]}>Dropoff</Text>
-                </Pressable>
+                <Chip label="Pickup" selected={isPickup} onPress={() => setPickupHaltId(item.id)} />
+                <Chip label="Dropoff" selected={isDropoff} onPress={() => setDropoffHaltId(item.id)} />
               </View>
             </View>
           );
@@ -153,17 +138,17 @@ const styles = StyleSheet.create({
     gap: spacing.xs,
   },
   routeRef: {
-    fontSize: 12,
-    fontWeight: '700',
+    fontSize: typography.size.xs,
+    fontWeight: typography.weight.bold,
     color: colors.primary,
   },
   routeName: {
-    fontSize: 17,
-    fontWeight: '700',
+    fontSize: typography.size.lg,
+    fontWeight: typography.weight.bold,
     color: colors.text,
   },
   helperIntro: {
-    fontSize: 13,
+    fontSize: typography.size.sm,
     color: colors.textMuted,
   },
   list: {
@@ -177,7 +162,7 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     borderWidth: 1,
     borderColor: colors.border,
-    borderRadius: 12,
+    borderRadius: radius.md,
     padding: spacing.md,
     backgroundColor: colors.surface,
     gap: spacing.md,
@@ -189,46 +174,19 @@ const styles = StyleSheet.create({
     flexShrink: 1,
   },
   sequence: {
-    fontSize: 13,
-    fontWeight: '700',
+    fontSize: typography.size.sm,
+    fontWeight: typography.weight.bold,
     color: colors.textMuted,
-    minWidth: 20,
+    minWidth: 16,
   },
   haltName: {
-    fontSize: 14,
+    fontSize: typography.size.md - 1,
     color: colors.text,
     flexShrink: 1,
   },
   chipGroup: {
     flexDirection: 'row',
     gap: spacing.xs,
-  },
-  chip: {
-    borderWidth: 1,
-    borderColor: colors.border,
-    borderRadius: 6,
-    paddingVertical: spacing.xs,
-    paddingHorizontal: spacing.sm,
-  },
-  chipPickupActive: {
-    backgroundColor: colors.primary,
-    borderColor: colors.primary,
-  },
-  chipDropoffActive: {
-    backgroundColor: colors.success,
-    borderColor: colors.success,
-  },
-  chipLabel: {
-    fontSize: 12,
-    fontWeight: '600',
-    color: colors.textMuted,
-  },
-  chipLabelActive: {
-    color: '#FFFFFF',
-  },
-  emptyTitle: {
-    fontSize: 15,
-    color: colors.text,
   },
   footer: {
     padding: spacing.lg,

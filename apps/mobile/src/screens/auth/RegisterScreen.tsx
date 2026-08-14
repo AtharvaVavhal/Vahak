@@ -1,9 +1,9 @@
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { useCallback, useRef, useState } from 'react';
-import { KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, Text } from 'react-native';
+import { Pressable, StyleSheet, Text } from 'react-native';
 
-import { Button, ErrorBanner, PasswordField, RoleSelector, TextField } from '../../components';
-import { colors, spacing } from '../../constants/theme';
+import { Button, ErrorBanner, PasswordField, RoleSelector, Screen, TextField } from '../../components';
+import { colors, spacing, typography } from '../../constants/theme';
 import { useAuth } from '../../hooks';
 import type { AuthStackParamList } from '../../navigation/AuthNavigator';
 import { UserRole, type RegisterableRole } from '../../types';
@@ -68,119 +68,123 @@ export function RegisterScreen({ navigation }: Props) {
   }, [name, phone, email, password, role, register]);
 
   return (
-    <KeyboardAvoidingView style={styles.flex} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
-      <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
-        <Text style={styles.title}>Create your account</Text>
-        <Text style={styles.subtitle}>Join Vahak to book, carry, or receive parcels.</Text>
+    <Screen contentContainerStyle={styles.content} safeAreaEdges={['top', 'bottom']}>
+      <Text style={styles.title}>Create your account</Text>
+      <Text style={styles.subtitle}>Join Vahak to book, carry, or receive parcels.</Text>
 
-        {formError ? <ErrorBanner message={formError} /> : null}
+      {formError ? <ErrorBanner message={formError} /> : null}
 
-        <TextField
-          label="Full name"
-          value={name}
-          onChangeText={(text) => {
-            setName(text);
-            clearFieldError('name');
-          }}
-          error={fieldErrors.name}
-          placeholder="Your name"
-          autoComplete="name"
-          textContentType="name"
-          editable={!submitting}
-        />
+      <TextField
+        testID="register-name-input"
+        label="Full name"
+        value={name}
+        onChangeText={(text) => {
+          setName(text);
+          clearFieldError('name');
+        }}
+        error={fieldErrors.name}
+        placeholder="Your name"
+        autoComplete="name"
+        textContentType="name"
+        editable={!submitting}
+      />
 
-        <TextField
-          label="Phone number"
-          value={phone}
-          onChangeText={(text) => {
-            setPhone(text);
-            clearFieldError('phone');
-          }}
-          error={fieldErrors.phone}
-          placeholder="10-digit phone number"
-          keyboardType="number-pad"
-          maxLength={10}
-          autoComplete="tel"
-          textContentType="telephoneNumber"
-          editable={!submitting}
-        />
+      <TextField
+        testID="register-phone-input"
+        label="Phone number"
+        value={phone}
+        onChangeText={(text) => {
+          setPhone(text);
+          clearFieldError('phone');
+        }}
+        error={fieldErrors.phone}
+        placeholder="10-digit phone number"
+        keyboardType="number-pad"
+        maxLength={10}
+        autoComplete="tel"
+        textContentType="telephoneNumber"
+        editable={!submitting}
+      />
 
-        <TextField
-          label="Email (optional)"
-          value={email}
-          onChangeText={(text) => {
-            setEmail(text);
-            clearFieldError('email');
-          }}
-          error={fieldErrors.email}
-          placeholder="you@example.com"
-          keyboardType="email-address"
-          autoCapitalize="none"
-          autoCorrect={false}
-          autoComplete="email"
-          textContentType="emailAddress"
-          editable={!submitting}
-        />
+      <TextField
+        testID="register-email-input"
+        label="Email (optional)"
+        value={email}
+        onChangeText={(text) => {
+          setEmail(text);
+          clearFieldError('email');
+        }}
+        error={fieldErrors.email}
+        placeholder="you@example.com"
+        keyboardType="email-address"
+        autoCapitalize="none"
+        autoCorrect={false}
+        autoComplete="email"
+        textContentType="emailAddress"
+        editable={!submitting}
+      />
 
-        <PasswordField
-          label="Password"
-          value={password}
-          onChangeText={(text) => {
-            setPassword(text);
-            clearFieldError('password');
-          }}
-          error={fieldErrors.password}
-          placeholder="At least 8 characters"
-          autoComplete="password-new"
-          textContentType="newPassword"
-          editable={!submitting}
-        />
+      <PasswordField
+        testID="register-password-input"
+        label="Password"
+        value={password}
+        onChangeText={(text) => {
+          setPassword(text);
+          clearFieldError('password');
+        }}
+        error={fieldErrors.password}
+        placeholder="At least 8 characters"
+        autoComplete="password-new"
+        textContentType="newPassword"
+        editable={!submitting}
+      />
 
-        <RoleSelector value={role} onChange={setRole} />
+      <RoleSelector value={role} onChange={setRole} />
 
-        <Button label="Create account" onPress={handleSubmit} loading={submitting} disabled={submitting} />
+      <Button
+        testID="register-submit-button"
+        label="Create account"
+        onPress={handleSubmit}
+        loading={submitting}
+        disabled={submitting}
+      />
 
-        <Pressable onPress={() => navigation.navigate('Login')} disabled={submitting} style={styles.link}>
-          <Text style={styles.linkText}>
-            Already have an account? <Text style={styles.linkTextStrong}>Log in</Text>
-          </Text>
-        </Pressable>
-      </ScrollView>
-    </KeyboardAvoidingView>
+      <Pressable onPress={() => navigation.navigate('Login')} disabled={submitting} style={styles.link}>
+        <Text style={styles.linkText}>
+          Already have an account? <Text style={styles.linkTextStrong}>Log in</Text>
+        </Text>
+      </Pressable>
+    </Screen>
   );
 }
 
 const styles = StyleSheet.create({
-  flex: {
-    flex: 1,
-    backgroundColor: colors.background,
-  },
   content: {
-    flexGrow: 1,
     justifyContent: 'center',
-    padding: spacing.lg,
     gap: spacing.md,
   },
   title: {
-    fontSize: 28,
-    fontWeight: '700',
+    fontSize: typography.size.xxl,
+    fontWeight: typography.weight.bold,
     color: colors.text,
   },
   subtitle: {
-    fontSize: 15,
+    fontSize: typography.size.md,
     color: colors.textMuted,
     marginBottom: spacing.sm,
   },
   link: {
     alignItems: 'center',
     marginTop: spacing.sm,
+    minHeight: 44,
+    justifyContent: 'center',
   },
   linkText: {
-    fontSize: 14,
+    fontSize: typography.size.sm + 1,
     color: colors.textMuted,
   },
   linkTextStrong: {
     color: colors.primary,
-    fontWeight: '600',
+    fontWeight: typography.weight.medium,
   },
 });

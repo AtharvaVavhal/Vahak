@@ -1,9 +1,10 @@
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
+import { TriangleAlert } from 'lucide-react-native';
 import { useCallback, useRef, useState } from 'react';
-import { Platform, StyleSheet, Text, View } from 'react-native';
+import { StyleSheet, Text, View } from 'react-native';
 
-import { Button, ErrorBanner, StatusBadge } from '../../components';
-import { colors, spacing } from '../../constants/theme';
+import { Button, Card, ErrorBanner, StatusBadge, StepIndicator } from '../../components';
+import { colors, radius, spacing, typography } from '../../constants/theme';
 import { PARCEL_SIZE_LABELS } from '../../constants/consignment';
 import { consignmentsApi } from '../../services/api';
 import type { SenderStackParamList } from '../../navigation/SenderNavigator';
@@ -41,29 +42,40 @@ export function BookingConfirmationScreen({ route, navigation }: Props) {
   return (
     <View style={styles.container}>
       <View style={styles.body}>
-        <Text style={styles.title}>
-          {needsBookingRetry ? 'Consignment created' : 'Booking confirmed'}
-        </Text>
-        <Text style={styles.trackingCode}>{consignment.trackingCode}</Text>
-        <StatusBadge status={consignment.status} />
+        <StepIndicator step={4} total={4} />
 
-        {needsBookingRetry ? (
-          <Text style={styles.notice}>
-            {"The consignment was created, but confirming the booking didn't go through. You can retry " +
-              'below, or from the consignment detail screen later.'}
-          </Text>
-        ) : null}
+        <Text style={styles.title}>{needsBookingRetry ? 'Consignment created' : 'Booking confirmed'}</Text>
 
-        {retryError ? <ErrorBanner message={retryError} /> : null}
-
-        <View style={styles.summary}>
-          <Text style={styles.summaryLine}>{PARCEL_SIZE_LABELS[consignment.parcelSize]} parcel</Text>
-          <Text style={styles.summaryLine}>Fare: {formatFare(consignment.fare)}</Text>
+        <View style={styles.trackingRow}>
+          <Text style={[styles.trackingCode, styles.mono]}>{consignment.trackingCode}</Text>
+          <StatusBadge status={consignment.status} />
         </View>
 
         {needsBookingRetry ? (
-          <Button label="Confirm booking" onPress={handleRetryBooking} loading={retrying} disabled={retrying} />
+          <View style={styles.warningCard}>
+            <TriangleAlert size={18} color={colors.warning} strokeWidth={2} />
+            <View style={styles.warningBody}>
+              <Text style={styles.warningTitle}>Booking didn&apos;t go through</Text>
+              <Text style={styles.warningText}>
+                The consignment was created, but confirming the booking failed. Retry below, or from the
+                consignment detail screen later.
+              </Text>
+              {retryError ? <ErrorBanner message={retryError} /> : null}
+              <Button
+                label="Retry booking"
+                onPress={handleRetryBooking}
+                loading={retrying}
+                disabled={retrying}
+                variant="secondary"
+              />
+            </View>
+          </View>
         ) : null}
+
+        <Card style={styles.summary}>
+          <Text style={styles.summaryLine}>{PARCEL_SIZE_LABELS[consignment.parcelSize]} parcel</Text>
+          <Text style={styles.summaryLine}>Fare: {formatFare(consignment.fare)}</Text>
+        </Card>
       </View>
 
       <View style={styles.actions}>
@@ -73,7 +85,7 @@ export function BookingConfirmationScreen({ route, navigation }: Props) {
             navigation.replace('ConsignmentDetail', { consignmentId: consignment.id })
           }
         />
-        <Button label="Back to home" onPress={() => navigation.popToTop()} />
+        <Button label="Back to home" onPress={() => navigation.popToTop()} variant="secondary" />
       </View>
     </View>
   );
@@ -91,25 +103,57 @@ const styles = StyleSheet.create({
     alignItems: 'flex-start',
   },
   title: {
-    fontSize: 24,
-    fontWeight: '700',
+    fontSize: typography.title.fontSize,
+    lineHeight: typography.title.lineHeight,
+    fontWeight: typography.title.fontWeight,
     color: colors.text,
+    marginTop: spacing.xs,
+  },
+  trackingRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
   },
   trackingCode: {
-    fontSize: 15,
-    fontFamily: Platform.select({ ios: 'Courier', android: 'monospace' }),
-    color: colors.textMuted,
+    fontSize: typography.codeEmphasis.fontSize,
+    fontWeight: typography.codeEmphasis.fontWeight,
+    color: colors.text,
   },
-  notice: {
-    fontSize: 13,
+  mono: {
+    fontFamily: typography.monoFontFamily,
+  },
+  warningCard: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: spacing.sm,
+    alignSelf: 'stretch',
+    borderRadius: radius.md,
+    borderWidth: 1,
+    borderColor: colors.warning,
+    backgroundColor: colors.warningTint,
+    padding: spacing.md,
+    marginTop: spacing.xs,
+  },
+  warningBody: {
+    flex: 1,
+    gap: spacing.sm,
+  },
+  warningTitle: {
+    fontSize: typography.label.fontSize,
+    fontWeight: typography.label.fontWeight,
     color: colors.warning,
+  },
+  warningText: {
+    fontSize: typography.caption.fontSize,
+    lineHeight: typography.caption.lineHeight,
+    color: colors.textSecondary,
   },
   summary: {
     marginTop: spacing.sm,
-    gap: spacing.xs,
+    alignSelf: 'stretch',
   },
   summaryLine: {
-    fontSize: 14,
+    fontSize: typography.size.md - 1,
     color: colors.text,
   },
   actions: {

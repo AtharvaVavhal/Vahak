@@ -1,14 +1,15 @@
 import { useFocusEffect } from '@react-navigation/native';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { useCallback, useState } from 'react';
-import { ActivityIndicator, Alert, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 
-import { Button, ErrorBanner, InfoRow } from '../../components';
-import { colors, spacing } from '../../constants/theme';
+import { Button, Card, ErrorBanner, InfoRow, LoadingState } from '../../components';
+import { colors, spacing, typography } from '../../constants/theme';
 import { adminApi } from '../../services/api';
 import type { AdminStackParamList } from '../../navigation/AdminNavigator';
 import type { RouteWithRelations } from '../../types';
 import { ApiError } from '../../utils/ApiError';
+import { confirmAction } from '../../utils/confirm';
 
 type Props = NativeStackScreenProps<AdminStackParamList, 'RouteDetail'>;
 
@@ -58,10 +59,7 @@ export function RouteDetailScreen({ route, navigation }: Props) {
   }, [routeId, navigation]);
 
   const confirmDeleteRoute = useCallback(() => {
-    Alert.alert('Delete route?', 'This cannot be undone.', [
-      { text: 'Cancel', style: 'cancel' },
-      { text: 'Delete route', style: 'destructive', onPress: performDeleteRoute },
-    ]);
+    confirmAction('Delete route?', 'This cannot be undone.', 'Delete route', performDeleteRoute, true);
   }, [performDeleteRoute]);
 
   const performDeleteHalt = useCallback(
@@ -82,10 +80,7 @@ export function RouteDetailScreen({ route, navigation }: Props) {
 
   const confirmDeleteHalt = useCallback(
     (haltId: string, name: string) => {
-      Alert.alert(`Delete "${name}"?`, 'This cannot be undone.', [
-        { text: 'Cancel', style: 'cancel' },
-        { text: 'Delete halt', style: 'destructive', onPress: () => performDeleteHalt(haltId) },
-      ]);
+      confirmAction(`Delete "${name}"?`, 'This cannot be undone.', 'Delete halt', () => performDeleteHalt(haltId), true);
     },
     [performDeleteHalt],
   );
@@ -105,56 +100,60 @@ export function RouteDetailScreen({ route, navigation }: Props) {
 
   const confirmDeleteBus = useCallback(
     (busId: string, registration: string) => {
-      Alert.alert(`Delete "${registration}"?`, 'This cannot be undone.', [
-        { text: 'Cancel', style: 'cancel' },
-        { text: 'Delete bus', style: 'destructive', onPress: () => performDeleteBus(busId) },
-      ]);
+      confirmAction(
+        `Delete "${registration}"?`,
+        'This cannot be undone.',
+        'Delete bus',
+        () => performDeleteBus(busId),
+        true,
+      );
     },
     [performDeleteBus],
   );
 
   if (loading) {
-    return (
-      <View style={styles.centered}>
-        <ActivityIndicator color={colors.primary} />
-      </View>
-    );
+    return <LoadingState />;
   }
 
   if (loadError || !routeData) {
     return (
       <View style={styles.centered}>
         <ErrorBanner message={loadError ?? 'Route not found.'} />
-        <Button label="Retry" onPress={load} />
+        <Button label="Retry" onPress={load} variant="secondary" />
       </View>
     );
   }
 
   return (
     <ScrollView contentContainerStyle={styles.content}>
-      <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Route</Text>
+      <Card title="Route">
         <InfoRow label="Name" value={routeData.name} />
         <InfoRow label="Origin" value={routeData.origin} />
         <InfoRow label="Destination" value={routeData.destination} />
-      </View>
+      </Card>
 
       {routeActionError ? <ErrorBanner message={routeActionError} /> : null}
       <View style={styles.rowButtons}>
         <View style={styles.rowButtonHalf}>
-          <Button label="Edit route" onPress={() => navigation.navigate('RouteForm', { routeId })} />
+          <Button label="Edit route" onPress={() => navigation.navigate('RouteForm', { routeId })} variant="secondary" />
         </View>
         <View style={styles.rowButtonHalf}>
-          <Button label="Delete route" onPress={confirmDeleteRoute} loading={deletingRoute} disabled={deletingRoute} />
+          <Button
+            label="Delete route"
+            onPress={confirmDeleteRoute}
+            loading={deletingRoute}
+            disabled={deletingRoute}
+            variant="danger"
+          />
         </View>
       </View>
 
       {itemActionError ? <ErrorBanner message={itemActionError} /> : null}
 
-      <View style={styles.section}>
+      <Card>
         <View style={styles.sectionHeader}>
           <Text style={styles.sectionTitle}>Halts</Text>
-          <Pressable onPress={() => navigation.navigate('HaltForm', { routeId })}>
+          <Pressable style={styles.addLinkTouch} onPress={() => navigation.navigate('HaltForm', { routeId })}>
             <Text style={styles.addLink}>+ Add halt</Text>
           </Pressable>
         </View>
@@ -181,15 +180,16 @@ export function RouteDetailScreen({ route, navigation }: Props) {
               onPress={() => confirmDeleteHalt(halt.id, halt.name)}
               loading={pendingDeleteId === halt.id}
               disabled={pendingDeleteId !== null}
+              variant="danger"
             />
           </View>
         ))}
-      </View>
+      </Card>
 
-      <View style={styles.section}>
+      <Card>
         <View style={styles.sectionHeader}>
           <Text style={styles.sectionTitle}>Buses</Text>
-          <Pressable onPress={() => navigation.navigate('BusForm', { routeId })}>
+          <Pressable style={styles.addLinkTouch} onPress={() => navigation.navigate('BusForm', { routeId })}>
             <Text style={styles.addLink}>+ Add bus</Text>
           </Pressable>
         </View>
@@ -210,10 +210,11 @@ export function RouteDetailScreen({ route, navigation }: Props) {
               onPress={() => confirmDeleteBus(bus.id, bus.registration)}
               loading={pendingDeleteId === bus.id}
               disabled={pendingDeleteId !== null}
+              variant="danger"
             />
           </View>
         ))}
-      </View>
+      </Card>
     </ScrollView>
   );
 }
@@ -230,14 +231,6 @@ const styles = StyleSheet.create({
     padding: spacing.lg,
     gap: spacing.lg,
   },
-  section: {
-    borderWidth: 1,
-    borderColor: colors.border,
-    borderRadius: 12,
-    padding: spacing.md,
-    gap: spacing.xs,
-    backgroundColor: colors.surface,
-  },
   sectionHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -245,13 +238,19 @@ const styles = StyleSheet.create({
     marginBottom: spacing.xs,
   },
   sectionTitle: {
-    fontSize: 13,
-    fontWeight: '700',
+    fontSize: typography.size.sm,
+    fontWeight: typography.weight.bold,
     color: colors.text,
   },
+  addLinkTouch: {
+    minHeight: 44,
+    minWidth: 44,
+    justifyContent: 'center',
+    alignItems: 'flex-end',
+  },
   addLink: {
-    fontSize: 13,
-    fontWeight: '600',
+    fontSize: typography.size.sm,
+    fontWeight: typography.weight.medium,
     color: colors.primary,
   },
   rowButtons: {
@@ -274,16 +273,16 @@ const styles = StyleSheet.create({
     gap: 2,
   },
   itemTitle: {
-    fontSize: 14,
-    fontWeight: '600',
+    fontSize: typography.size.md - 1,
+    fontWeight: typography.weight.medium,
     color: colors.text,
   },
   itemSubtitle: {
-    fontSize: 12,
+    fontSize: typography.size.xs,
     color: colors.textMuted,
   },
   emptyText: {
-    fontSize: 13,
+    fontSize: typography.size.sm,
     color: colors.textMuted,
   },
 });

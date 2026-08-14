@@ -5,7 +5,6 @@ import {
   BookingConfirmationScreen,
   BookParcelScreen,
   ConsignmentDetailScreen,
-  MyConsignmentsScreen,
   SelectHaltsScreen,
   SenderHomeScreen,
 } from '../screens';
@@ -33,7 +32,6 @@ export type SenderStackParamList = {
   // (or type-checked as navigable) without going through the browsing flow first.
   BookParcel: RouteSelection & HaltSelection;
   BookingConfirmation: { consignment: Consignment };
-  MyConsignments: undefined;
   ConsignmentDetail: { consignmentId: string };
 };
 
@@ -54,11 +52,6 @@ export function SenderNavigator() {
         name="BookingConfirmation"
         component={BookingConfirmationScreen}
         options={{ title: 'Booking confirmed', headerBackVisible: false, gestureEnabled: false }}
-      />
-      <Stack.Screen
-        name="MyConsignments"
-        component={MyConsignmentsScreen}
-        options={{ title: 'My consignments' }}
       />
       <Stack.Screen
         name="ConsignmentDetail"

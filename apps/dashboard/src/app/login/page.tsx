@@ -3,6 +3,7 @@
 import { useRouter } from 'next/navigation';
 import { useCallback, useEffect, useRef, useState } from 'react';
 
+import { consumeSessionExpiredFlag } from '../../auth';
 import { Button, ErrorBanner, TextField } from '../../components/ui';
 import { useAuth } from '../../hooks';
 import { ApiError } from '../../utils/ApiError';
@@ -22,6 +23,7 @@ export default function LoginPage() {
   const [fieldErrors, setFieldErrors] = useState<FieldErrors>({});
   const [formError, setFormError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
+  const [sessionExpired, setSessionExpired] = useState(false);
   const submittingRef = useRef(false);
 
   useEffect(() => {
@@ -29,6 +31,11 @@ export default function LoginPage() {
       router.replace('/dashboard');
     }
   }, [isBootstrapping, isAuthenticated, router]);
+
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setSessionExpired(consumeSessionExpiredFlag());
+  }, []);
 
   const handleSubmit = useCallback(
     async (event: React.FormEvent) => {
@@ -59,12 +66,18 @@ export default function LoginPage() {
   );
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-slate-50 px-4">
-      <div className="w-full max-w-sm rounded-lg border border-slate-200 bg-white p-8 shadow-sm">
-        <h1 className="text-xl font-bold text-slate-900">Vahak Admin</h1>
-        <p className="mt-1 text-sm text-slate-500">Sign in with an admin account to continue.</p>
+    <div className="flex min-h-screen items-center justify-center bg-canvas px-4">
+      <div className="w-full max-w-[400px] rounded-md border border-ink-150 bg-surface p-8">
+        <span className="text-lg font-bold text-ink-900">Vahak</span>
+        <p className="mt-1 text-sm text-ink-500">Book, carry, and receive parcels across the network.</p>
+        <h1 className="mt-6 text-xl font-bold text-ink-900">Welcome back</h1>
 
-        <form className="mt-6 flex flex-col gap-4" onSubmit={handleSubmit} noValidate>
+        <form className="mt-4 flex flex-col gap-4" onSubmit={handleSubmit} noValidate>
+          {sessionExpired ? (
+            <div className="rounded-sm border border-warning bg-warning-tint px-3 py-2 text-sm text-warning">
+              Your session expired. Please log in again.
+            </div>
+          ) : null}
           {formError ? <ErrorBanner message={formError} /> : null}
 
           <TextField

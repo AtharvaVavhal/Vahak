@@ -2,7 +2,7 @@
 
 import type { ButtonHTMLAttributes, ReactNode } from 'react';
 
-type Variant = 'primary' | 'secondary' | 'danger' | 'ghost';
+type Variant = 'primary' | 'secondary' | 'danger' | 'ghost' | 'dangerGhost';
 
 interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
   label: ReactNode;
@@ -11,16 +11,17 @@ interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
 }
 
 const VARIANT_CLASSES: Record<Variant, string> = {
-  primary: 'bg-blue-600 text-white hover:bg-blue-700 disabled:bg-blue-300',
-  secondary: 'bg-white text-slate-700 border border-slate-300 hover:bg-slate-50 disabled:text-slate-400',
-  danger: 'bg-red-600 text-white hover:bg-red-700 disabled:bg-red-300',
-  ghost: 'bg-transparent text-slate-600 hover:bg-slate-100 disabled:text-slate-300',
+  primary: 'bg-brand text-white hover:bg-brand-hover',
+  secondary: 'bg-surface text-ink-700 border border-ink-300 hover:bg-canvas',
+  danger: 'bg-danger text-white hover:opacity-90',
+  ghost: 'bg-transparent text-brand hover:bg-brand-tint',
+  dangerGhost: 'bg-transparent text-danger hover:bg-danger-tint',
 };
 
 export function Button({ label, loading = false, variant = 'primary', disabled, className, ...rest }: ButtonProps) {
   return (
     <button
-      className={`inline-flex items-center justify-center gap-2 rounded-md px-4 py-2 text-sm font-medium transition-colors disabled:cursor-not-allowed ${VARIANT_CLASSES[variant]} ${className ?? ''}`}
+      className={`inline-flex h-10 items-center justify-center gap-2 rounded-sm px-4 text-sm font-medium transition-colors disabled:cursor-not-allowed disabled:opacity-40 ${VARIANT_CLASSES[variant]} ${className ?? ''}`}
       disabled={disabled || loading}
       {...rest}
     >

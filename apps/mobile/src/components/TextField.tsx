@@ -1,7 +1,7 @@
 import { type ReactNode } from 'react';
 import { StyleSheet, Text, TextInput, View, type TextInputProps } from 'react-native';
 
-import { colors, spacing } from '../constants/theme';
+import { colors, radius, spacing, typography } from '../constants/theme';
 
 interface TextFieldProps extends TextInputProps {
   label: string;
@@ -31,18 +31,20 @@ const styles = StyleSheet.create({
     gap: spacing.xs,
   },
   label: {
-    fontSize: 13,
-    fontWeight: '600',
+    fontSize: typography.label.fontSize,
+    lineHeight: typography.label.lineHeight,
+    fontWeight: typography.label.fontWeight,
     color: colors.text,
   },
   inputRow: {
     flexDirection: 'row',
     alignItems: 'center',
     borderWidth: 1,
-    borderColor: colors.border,
-    borderRadius: 8,
+    borderColor: colors.ink300,
+    borderRadius: radius.sm,
     paddingHorizontal: spacing.md,
-    backgroundColor: colors.background,
+    minHeight: 48,
+    backgroundColor: colors.surface,
   },
   inputRowError: {
     borderColor: colors.danger,
@@ -50,11 +52,12 @@ const styles = StyleSheet.create({
   input: {
     flex: 1,
     paddingVertical: spacing.sm + 2,
-    fontSize: 15,
+    fontSize: typography.body.fontSize,
     color: colors.text,
   },
   errorText: {
-    fontSize: 12,
+    fontSize: typography.caption.fontSize,
+    lineHeight: typography.caption.lineHeight,
     color: colors.danger,
   },
 });

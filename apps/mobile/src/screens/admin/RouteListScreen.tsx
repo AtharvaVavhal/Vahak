@@ -1,10 +1,11 @@
 import { useFocusEffect } from '@react-navigation/native';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { useCallback, useState } from 'react';
-import { ActivityIndicator, FlatList, Pressable, RefreshControl, StyleSheet, Text, View } from 'react-native';
+import { FlatList, Pressable, RefreshControl, StyleSheet, Text, View } from 'react-native';
 
-import { Button, ErrorBanner } from '../../components';
-import { colors, spacing } from '../../constants/theme';
+import { Button, Card, EmptyState, ErrorBanner, LoadingState } from '../../components';
+import { ICONS } from '../../constants/icons';
+import { colors, spacing, typography } from '../../constants/theme';
 import { adminApi } from '../../services/api';
 import type { AdminStackParamList } from '../../navigation/AdminNavigator';
 import type { RouteWithRelations } from '../../types';
@@ -64,18 +65,14 @@ export function RouteListScreen({ navigation }: Props) {
   }, [page, totalPages, loadingMore]);
 
   if (loading) {
-    return (
-      <View style={styles.centered}>
-        <ActivityIndicator color={colors.primary} />
-      </View>
-    );
+    return <LoadingState />;
   }
 
   if (error && !routes) {
     return (
       <View style={styles.centered}>
         <ErrorBanner message={error} />
-        <Button label="Retry" onPress={() => load(false)} />
+        <Button label="Retry" onPress={() => load(false)} variant="secondary" />
       </View>
     );
   }
@@ -87,30 +84,24 @@ export function RouteListScreen({ navigation }: Props) {
         keyExtractor={(item) => item.id}
         contentContainerStyle={styles.list}
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => load(true)} />}
-        ListEmptyComponent={
-          <View style={styles.centered}>
-            <Text style={styles.emptyTitle}>No routes yet</Text>
-            <Text style={styles.emptySubtitle}>Create one to get started.</Text>
-          </View>
-        }
+        ListEmptyComponent={<EmptyState icon={ICONS.route} title="No routes yet" subtitle="Create one to get started." />}
         ListFooterComponent={
           page < totalPages ? (
-            <Button label="Load more" onPress={loadMore} loading={loadingMore} disabled={loadingMore} />
+            <Button label="Load more" onPress={loadMore} loading={loadingMore} disabled={loadingMore} variant="secondary" />
           ) : null
         }
         renderItem={({ item }) => (
-          <Pressable
-            style={styles.card}
-            onPress={() => navigation.navigate('RouteDetail', { routeId: item.id })}
-          >
-            <Text style={styles.cardTitle}>{item.name}</Text>
-            <Text style={styles.cardSubtitle}>
-              {item.origin} → {item.destination}
-            </Text>
-            <Text style={styles.meta}>
-              {item.halts.length} halt{item.halts.length === 1 ? '' : 's'} · {item.buses.length} bus
-              {item.buses.length === 1 ? '' : 'es'}
-            </Text>
+          <Pressable onPress={() => navigation.navigate('RouteDetail', { routeId: item.id })}>
+            <Card>
+              <Text style={styles.cardTitle}>{item.name}</Text>
+              <Text style={styles.cardSubtitle}>
+                {item.origin} → {item.destination}
+              </Text>
+              <Text style={styles.meta}>
+                {item.halts.length} halt{item.halts.length === 1 ? '' : 's'} · {item.buses.length} bus
+                {item.buses.length === 1 ? '' : 'es'}
+              </Text>
+            </Card>
           </Pressable>
         )}
       />
@@ -140,35 +131,17 @@ const styles = StyleSheet.create({
     gap: spacing.md,
     flexGrow: 1,
   },
-  card: {
-    borderWidth: 1,
-    borderColor: colors.border,
-    borderRadius: 12,
-    padding: spacing.md,
-    backgroundColor: colors.surface,
-    gap: spacing.xs,
-    marginBottom: spacing.md,
-  },
   cardTitle: {
-    fontSize: 15,
-    fontWeight: '700',
+    fontSize: typography.size.md,
+    fontWeight: typography.weight.bold,
     color: colors.text,
   },
   cardSubtitle: {
-    fontSize: 13,
+    fontSize: typography.size.sm,
     color: colors.textMuted,
   },
   meta: {
-    fontSize: 12,
-    color: colors.textMuted,
-  },
-  emptyTitle: {
-    fontSize: 17,
-    fontWeight: '700',
-    color: colors.text,
-  },
-  emptySubtitle: {
-    fontSize: 13,
+    fontSize: typography.size.xs,
     color: colors.textMuted,
   },
   footer: {

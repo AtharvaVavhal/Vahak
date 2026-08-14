@@ -3,6 +3,7 @@
   "version": "1.0.0",
   "main": "index.ts",
   "dependencies": {
+    "@react-navigation/bottom-tabs": "^7.18.16",
     "@react-navigation/native": "^7.3.16",
     "@react-navigation/native-stack": "^7.18.8",
     "axios": "^1.19.0",
@@ -10,6 +11,7 @@
     "expo-dev-client": "~57.0.11",
     "expo-secure-store": "~57.0.1",
     "expo-status-bar": "~57.0.1",
+    "lucide-react-native": "^0.545.0",
     "react": "19.2.3",
     "react-dom": "19.2.3",
     "react-native": "0.86.2",
